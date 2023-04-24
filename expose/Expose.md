@@ -35,6 +35,7 @@ Certain spots on the plane can contain clusters of food. Food clusters can be pl
 Ants will lay two types of pheromones when they move. When they are without food, they will leave a "to home" pheromone trace (blue dots). And when they carry food they will leave a "to food" pheromone trace (green dots).
 
 ![pheromone decaying](images/s1m3-pheromone-details.png)
+
 The pheromone traces will decay over time, by a decay function. This can be linear or exponential.
 
 *Parameters:*
