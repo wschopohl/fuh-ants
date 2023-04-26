@@ -23,4 +23,4 @@ This approach would work with two simple hash functions *(hx(x), hy(y))* to add 
 
 When filtering the pheromones the current position of the ant would be hashed to get all (max 9) relevant bins surrounding the ant. 
 
-This could minimize the searchable area to $(d*3)^2 \over (w * h)$. In the case of a 800x600 pixel animation, with a search distance of 10 pixel this would reduce the searchable are to rougly 0,2 % implying a speed boost by factor 500.
+This could minimize the searchable area to $(d*3)^2 \over (w * h)$. In the case of a 800x600 pixel animation, with a search distance of 10 pixel this would reduce the searchable area to rougly 0,2 % implying a speed boost by factor 500.
