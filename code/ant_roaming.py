@@ -48,7 +48,7 @@ class Pheromone:
         self.x = x
         self.y = y
         self.size = size
-        self.colour = (0, 0, 0)
+        self.colour = (BLACK)
         self.thickness = 1
 
     def display(self):
@@ -76,11 +76,9 @@ def main():
         current_time = time.time()
         elapsed = current_time - last_update_time
         last_update_time = current_time
-    
-        # Calculate the ants current velocity
-        mouse_x, mouse_y = pygame.mouse.get_pos()
 
         # Trigonometry
+        # Calculate random angles for movement
         angle += random.uniform(-0.25, 0.25)
         vel_y = -math.sin(angle) * MAX_SPEED
         vel_x = -math.cos(angle) * MAX_SPEED
