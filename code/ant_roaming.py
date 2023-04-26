@@ -8,8 +8,6 @@ import time
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
    
-
-
 # Create Window
 pygame.init()
 
@@ -24,8 +22,8 @@ FPS = 60
 pygame.display.set_caption("Ant Simulation")
 
 # Ant-Image WIDTH and HEIGHT Setting
-ANT_IMAGE_WIDTH = 20
-ANT_IMAGE_HEIGHT = 30
+ANT_IMAGE_WIDTH = 10
+ANT_IMAGE_HEIGHT = 15
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
@@ -43,34 +41,12 @@ PHEROMONE_TICK = 5
 clock = pygame.time.Clock()
 
 
-class Pheromone:
-    def __init__(self, x, y, size):
-        self.x = x
-        self.y = y
-        self.size = size
-        self.colour = (BLACK)
-        self.thickness = 1
+class Ant:
+    def __init__():
+        print("test")
 
-    def display(self):
-        pygame.draw.circle(window, self.colour, (self.x, self.y), self.size, self.thickness)
-
-
-def main():
-
-    ant_pos = [WIDTH/2, HEIGHT/2]
-    last_update_time = time.time()
-    pheromone_time = time.time()
-    
-    angle = 0
-
-    pheromone_positions = []
-    
-    run = True
-    while run:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
+    def update(self):
+        last_update_time = time.time()
 
         # Calculate how long its been since the last update
         current_time = time.time()
@@ -87,6 +63,37 @@ def main():
         ant_pos[0] += vel_x * elapsed
         ant_pos[1] += vel_y * elapsed
 
+
+class Pheromone:
+    def __init__(self, x, y, size):
+        self.x = x
+        self.y = y
+        self.size = size
+        self.colour = (BLACK)
+        self.thickness = 1
+
+    def display(self):
+        pygame.draw.circle(window, self.colour, (self.x, self.y), self.size, self.thickness)
+
+
+def main():
+
+    ant_pos = [WIDTH/2, HEIGHT/2]
+    
+    pheromone_time = time.time()
+    
+    angle = 0
+
+    pheromone_positions = []
+
+    ants = []
+    
+    run = True
+    while run:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
         # Drawing
 
         '''START: ADD COLLISION DETECTION USING PYGAME COLLISION FUNCTIONS HERE'''
@@ -116,6 +123,9 @@ def main():
         ROTATED_ANT_IMAGE = pygame.transform.rotate(ANT_IMAGE, degrees)
         
         window.blit(ROTATED_ANT_IMAGE, ANT_IMAGE_RECT)
+
+        for ant in ants:
+            print("test")
 
         # Draw Pheromone-Trails
 
