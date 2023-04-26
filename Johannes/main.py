@@ -22,7 +22,7 @@ F_hoehe = 600
 # init Grafik
 pygame.init()
 # Bilder
-ameise = pygame.image.load("walking_ant.png")
+ameise = pygame.image.load("Johannes\walking_ant.png")
 
 ameise_frame_h = 248
 ameise_frame_b = 202

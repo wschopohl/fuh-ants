@@ -13,7 +13,7 @@ def get_neighborhood(map,pos,sensor_weite):
 
 def simple_sensor(map):
     pos = [(7,4),(7,7),(4,7),(1,7),(1,4),(1,1),(4,1),(7,1)]
-    return [np.sum(get_neighborhood(map,x,4)) for x in pos]
+    return [np.sum(get_neighborhood(map,x,1)) for x in pos]
             
 def dis_pos(a,b):
     return np.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2)
@@ -31,7 +31,7 @@ class ant():
         self.geschwindigkeit = geschwindigkeit 
         self.name = name
         self.vis_obj = vis_obj
-        self.sensor_weite = 10 #"sichtweise" in pixel
+        self.sensor_weite = 4 #"sichtweise" in pixel
         self.trage_obj = None
         self.count_event=0
         
