@@ -107,13 +107,10 @@ def main():
         position = ant_pos[0], ant_pos[1]
         pheromone_positions.append(position)
        
-        
         window.fill(WHITE)
 
         ANT_IMAGE_RECT = ANT_IMAGE.get_rect()
-
-        
-            
+          
         ANT_IMAGE_RECT.center = (ant_pos[0], ant_pos[1])
 
         degrees = - (math.degrees(angle)-90)
