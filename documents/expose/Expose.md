@@ -4,7 +4,7 @@
 ![ant title image](images/title.jpg)
 
 ## Implementation
-We plan to implement this simulation in multiple stages. The main stage #1 being the basic goal and the additional stages #2 and #3 as further improvements if everything goes according to plan. Each stage is further broken down into milestones.
+We plan to implement this simulation in multiple stages. The main stage #1 being the basic goal and the additional stage #2 as further improvement if everything goes according to plan. Each stage is further broken down into milestones.
 
 ### Technical Details
 We chose **Python** as Programming language. We think that it's compact code style helps to convey the basic concepts and makes this simulation more accesible to a wider group.
@@ -60,11 +60,19 @@ Over time these simple rules should allow the ants to harvest the food sources v
 Varying the afore mentioned parameters will allow to simulate different behaviours of the ants.
 
 
-## #2 Additional Stage: Labyrinth
-![labyrinth](images/s2-labyrinth.png)
-The first additional stage will be to introduce walls to be able to build labyrinths. This will imply to implement collision detection between ants and walls. As a result the simulations will become even more interesting as the ants will now be able to show their strength in navigating these mazes.
+## #2 Additional Stage: Obstacles
+### M1: Walls
+An additional stage will be to introduce walls to be able to build obstacles. This will imply to implement collision detection between ants and walls. As a result the simulations will become even more interesting as the ants will now be able to show their strength in solving more complex problems.
 
+### M2: The double bridge experiment
+We would be interested to observe the behaviour of our ants in a [double bridge experiment](http://www.scholarpedia.org/article/Ant_colony_optimization#The_double-bridge_experiment). In short, the ants will be confronted with two situations:
 
-## #3 Additional Stage: Dangers
-![labyrinth](images/s3-dangers.png)
-The idea of this stage is to introduce dangers. This could be tainted food or enemies for example. The ants will use additional kind of pheromones (yellow) to warn other ants or guide warrior ants to engage those enemies.
+![labyrinth](images/s2-bridges-equal.jpeg)
+In the first scenario, with two paths of equal length, the ants are expected to randomly choose one of the two paths over time. When repeating this experiment over and over, the probability for both paths should converge to 50%.
+
+![labyrinth](images/s2-bridges-unequal.jpeg)
+In the second scenario one of the paths is significantly shorter than the other. Of course, the ants are now expected to choose the shorter path over time. It would be intersting though, if we can arrive at the formula that *Goss et al. (1989)* developed in the article above 
+
+$$p_1=\frac{(m_1+k)^h}{(m_1+k)^h+(m_2+k)^h}$$
+
+and if we can use the parameters of their formula to fine tune the behaviour of our ants to act like normal ants.
