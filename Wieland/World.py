@@ -34,7 +34,13 @@ class World:
             self.foodclusters.append(object)
             self.render_engine.add(object)
         elif type(object) is Pheromone:
+            object.setWorld(self)
             self.pheromones.append(object)
+            self.render_engine.add(object)
+
+    def remove(self, object):
+        if type(object) is Pheromone:
+            self.pheromones.remove(object)
         
     def run(self):
         for nest in self.nests:
@@ -42,6 +48,7 @@ class World:
         
         ThreadHelper.start("ants", self.antLoop)
         ThreadHelper.start("collisions", self.collisionLoop)
+        ThreadHelper.start("pheromones", self.pheromoneLoop)
 
     def stop(self):
         for nest in self.nests:
@@ -49,6 +56,7 @@ class World:
 
         ThreadHelper.stop("collisions")
         ThreadHelper.stop("ants")
+        ThreadHelper.stop("pheromones")
 
 
     def antLoop(self, running):
@@ -62,6 +70,12 @@ class World:
         while running[0]:
             self.checkFoodClusterCollision()
             self.checkNestCollision()
+            time.sleep(Config.AntSleepTime)
+
+    def pheromoneLoop(self, running):
+        while running[0]:
+            for pheromone in self.pheromones:
+                pheromone.decay(Config.PheromoneDecay)
             time.sleep(Config.AntSleepTime)
             
     def checkFoodClusterCollision(self):

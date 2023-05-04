@@ -1,6 +1,8 @@
 from random import randint
 import math
 
+from Pheromone import Pheromone, Type as PheromoneType
+
 import Config
 
 class Ant:
@@ -20,6 +22,7 @@ class Ant:
     def move(self):
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         self.randomChangeDirection()
+        self.dropPheromone()
 
     def take(self, foodcluster):
         if self.carry_food >= self.max_carry: return
@@ -34,11 +37,16 @@ class Ant:
         self.carry_food = 0
         self.sprite.updateImage()
 
+    def dropPheromone(self):
+        if self.step % Config.AntPheromoneDrop != 0: return
+        pheromnoe_type = PheromoneType.HOME
+        if self.carry_food > 0: pheromnoe_type = PheromoneType.FOOD
+        self.nest.world.add(Pheromone(self.position, pheromnoe_type, Config.PheromoneIntensity))
+
     def randomChangeDirection(self, now=False):
         self.step += 1
-        if not now and self.step < Config.AntAngleStep:
-            return
-        self.step = 0
+        if not now and self.step % Config.AntAngleStep != 0: return
+        
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         self.direction = (self.direction + da) % 360
 

@@ -2,6 +2,7 @@ import pygame
 from Ant import Ant
 from Nest import Nest
 from FoodCluster import FoodCluster
+from Pheromone import Pheromone, Type as PheromoneType
 import Colors
 import Config
 
@@ -24,6 +25,7 @@ class EnginePygame:
         self.pgants = pygame.sprite.Group()
         self.pgnests = pygame.sprite.Group()
         self.pgfoodclusters = pygame.sprite.Group()
+        self.pgpheromones = pygame.sprite.Group()
 
     def add(self, object):
         if type(object) is Ant:
@@ -35,6 +37,9 @@ class EnginePygame:
         if type(object) is FoodCluster:
             pgfoodcluster = PGFoodCluster(object)
             self.pgfoodclusters.add(pgfoodcluster)
+        if type(object) is Pheromone:
+            pgpheromone = PGPheromone(object)
+            self.pgpheromones.add(pgpheromone)
         
     def startRenderLoop(self):
         running = True
@@ -44,12 +49,14 @@ class EnginePygame:
                     running = False
 
             self.pgants.update()
+            self.pgpheromones.update()
             
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
+            self.pgpheromones.draw(self.screen)
             self.pgants.draw(self.screen)
             self.printNestStats()
             renderMutex.release()
@@ -64,6 +71,7 @@ class EnginePygame:
         text = "Nest Food: "
         for idx, nest in enumerate(self.world.nests):
             text += "["+ str(idx) + "]: " + str(nest.food_amount) + " "
+        text += " Pheromones: " + str(len(self.pgpheromones))
         text_surface = self.font.render(text, True, Colors.InfoText)
         self.screen.blit(text_surface, (20, 20))
 
@@ -131,3 +139,33 @@ class PGFoodCluster(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
         self.rect.y = self.foodcluster.position[1] - self.rect.height / 2
+
+class PGPheromone(pygame.sprite.Sprite):
+    pheromone_images = {}
+    
+    @classmethod
+    def loadImages(cls):
+        if PGPheromone.pheromone_images != {}: return
+        for color in Colors.PheromoneColors:
+            tmp_image = pygame.Surface((Config.PheromoneSize*2, Config.PheromoneSize*2), pygame.SRCALPHA)   # per-pixel alpha
+            pygame.draw.circle(tmp_image, Colors.PheromoneColors[color], (Config.PheromoneSize, Config.PheromoneSize), Config.PheromoneSize)
+            PGPheromone.pheromone_images[color] = tmp_image
+    
+    def __init__(self, pheromone):
+        pygame.sprite.Sprite.__init__(self)
+        PGPheromone.loadImages()
+        self.pheromone = pheromone
+        pheromone.setSprite(self)
+        self.image = PGPheromone.pheromone_images[pheromone.type].copy()
+        self.rect = self.image.get_rect()
+        self.rect.x = self.pheromone.position[0] - self.rect.width / 2
+        self.rect.y = self.pheromone.position[1] - self.rect.height / 2
+        self.update()
+
+    def update(self):
+        intensity = (self.pheromone.intensity / Config.PheromoneIntensity) * 255
+        # print(intensity)
+        self.image.set_alpha(intensity)
+
+    def remove(self):
+        self.kill()
