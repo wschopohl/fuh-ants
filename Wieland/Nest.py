@@ -2,14 +2,14 @@ import threading
 import time
 
 from Ant import Ant
-
-Unlimited = -1
+import Const
 
 class Nest:    
-    def __init__(self, position=(100,100), spawn_rate=1, max_ants=Unlimited):
+    def __init__(self, position=(100,100), spawn_rate=1, max_ants=Const.Unlimited):
         self.position = position
         self.spawn_rate = spawn_rate
         self.max_ants = max_ants
+        self.spawned = 0
 
     def setWorld(self, world):
         self.world = world
@@ -25,8 +25,8 @@ class Nest:
 
     def loop(self):
         while self.running:
-            self.spawn(Ant(self))
+            self.world.add(Ant(self))
+            self.spawned += 1
+            if self.spawned >= self.max_ants:
+                self.running = False
             time.sleep(1/self.spawn_rate)
-
-    def spawn(self, ant):
-        self.world.ants.append(ant)
