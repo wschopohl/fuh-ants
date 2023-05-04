@@ -5,6 +5,11 @@ AntMoveDistance = 1
 AntAngleVariation = 50
 AntAngleStep = 50
 AntSleepTime = 0.01
-AntImageFile = "assets/ant.png"
 
-FoodSize = 0.1 
+FoodSize = 0.3
+
+
+# graphical configs
+AntImageFile = "assets/ant.png"
+AntFoodPosition = (10,10)
+AntFoodSize = 5

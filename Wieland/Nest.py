@@ -10,9 +10,16 @@ class Nest:
         self.spawn_rate = spawn_rate
         self.max_ants = max_ants
         self.spawned = 0
+        self.food_amount = 0
 
     def setWorld(self, world):
         self.world = world
+
+    def setSprite(self, sprite):
+        self.sprite = sprite
+
+    def deliver(self, amount):
+        self.food_amount += amount
 
     def run(self):
         self.running = True

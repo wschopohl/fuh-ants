@@ -1,14 +1,13 @@
 from random import randrange
-import threading
 import time
 
 from Nest import Nest
 from Ant import Ant
 from FoodCluster import FoodCluster
 from Pheromone import Pheromone
+from CollisionPygame import CollisionPygame
 import Config
 import ThreadHelper
-import Collision
 
 class World:
     def __init__(self, width, height):
@@ -18,6 +17,7 @@ class World:
         self.ants = []
         self.foodclusters = []
         self.pheromones = []
+        self.collision = CollisionPygame()
 
     def setup(self, render_engine):
         self.render_engine = render_engine
@@ -60,8 +60,22 @@ class World:
 
     def collisionLoop(self, running):
         while running[0]:
-            for nest in self.nests:
-                ants = Collision.check(nest, self.ants)
+            self.checkFoodClusterCollision()
+            self.checkNestCollision()
+            time.sleep(Config.AntSleepTime)
+            
+    def checkFoodClusterCollision(self):
+        for foodcluster in self.foodclusters:
+            ants = self.collision.check(foodcluster, self.ants)
+            if ants == []: continue
+            for ant in ants: ant.take(foodcluster)
+
+    def checkNestCollision(self):
+        for nest in self.nests:
+            ants = self.collision.check(nest, self.ants)
+            if ants == []: continue
+            for ant in ants: ant.deliver(nest)
+
 
     def randomPosition(self, margin=0):
         return (randrange(margin, self.width - margin), randrange(margin, self.height - margin))

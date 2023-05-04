@@ -12,6 +12,9 @@ def main():
 
     world.add(Nest(position = world.randomPosition(100), spawn_rate=4, max_ants = 100))
     world.add(FoodCluster(position = world.randomPosition(100), amount=100))
+    world.add(FoodCluster(position = world.randomPosition(100), amount=100))
+    world.add(FoodCluster(position = world.randomPosition(100), amount=100))
+    world.add(FoodCluster(position = world.randomPosition(100), amount=100))
 
     world.run()
     engine.startRenderLoop()  # sync call, execution waits here
