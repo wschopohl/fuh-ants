@@ -63,6 +63,7 @@ class World:
         while running[0]:
             for ant in self.ants:
                 ant.move()
+                # ant.sense(self.pheromones)
         
             time.sleep(Config.AntSleepTime)
 
@@ -80,6 +81,8 @@ class World:
             
     def checkFoodClusterCollision(self):
         for foodcluster in self.foodclusters:
+            if foodcluster.amount == 0: 
+                continue
             ants = self.collision.check(foodcluster, self.ants)
             if ants == []: continue
             for ant in ants: ant.take(foodcluster)

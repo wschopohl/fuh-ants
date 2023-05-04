@@ -1,9 +1,10 @@
 AntMoveDistance = 1
-AntAngleVariation = 50
-AntAngleStep = 50
+AntAngleVariation = 10
+AntAngleStep = 20
 AntSleepTime = 0.01
 AntPheromoneDrop = 20
-
+AntSenseRadius = 140
+AntFieldOfView = 60
 
 
 
@@ -17,4 +18,4 @@ FoodSize = 0.3
 
 PheromoneSize = 4
 PheromoneIntensity = 100
-PheromoneDecay = 0.1
+PheromoneDecay = 0.3

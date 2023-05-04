@@ -91,6 +91,7 @@ class PGAnt(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.ant = ant
         self.object = ant
+        self.radius = Config.AntSenseRadius
         ant.setSprite(self)
         PGAnt.loadImages()
         self.updateImage()
