@@ -22,6 +22,10 @@ F_hoehe = 600
 # init Grafik
 pygame.init()
 # Bilder
+
+#BG/map
+
+bg_map = pygame.image.load("Johannes\map_01.png")
 ameise = pygame.image.load("Johannes\walking_ant.png")
 
 ameise_frame_h = 248
@@ -50,6 +54,8 @@ for n in range(62): #62 sprites auf 8x8 grid
 #init Umwelt
 
 Umwelt = umwelt.umwelt(F_breite,F_hoehe)
+
+Umwelt.map = pygame.surfarray.array2d(bg_map)
 Umwelt.add_colony()
 
 
@@ -84,16 +90,16 @@ while spielaktiv:
     # Spiellogik hier integrieren
     Umwelt.update()
     # Spielfeld/figur(en) zeichnen (davor Spielfeld löschen)
-    screen.fill(ORANGE)
-
+    #screen.fill(ORANGE)
+    screen.blit(bg_map,(0,0))
     ant_frame += 1
 
     if ant_frame >61:
         ant_frame = 0
         #print(clock.get_fps(),len(Umwelt.ants))
-    if ant_frame %3==0:
+    if ant_frame %15==0:
         for colony in Umwelt.colonys:
-            if len(colony.ants)<100:
+            if len(colony.ants)<150:
                 colony.add_ant()
             # else:
             #     if ant_frame %30==0:
@@ -101,13 +107,13 @@ while spielaktiv:
             
 
     for food in Umwelt.food_places:
-        pygame.draw.circle(screen, SCHWARZ, food.pos, 20)
+        pygame.draw.circle(screen, SCHWARZ, (food.pos[0]+10,food.pos[1]+10), 20)
 
     for colony in Umwelt.colonys:
         #äphero_map = pygame.surfarray.make_surface(colony.phero[0])
         #phero_map.set_colorkey(0)
         #surf_phero_a.set_alpha(colony.phero[0])
-        pygame.draw.circle(screen, GRAU, colony.pos, 20)
+        pygame.draw.circle(screen, GRAU, (colony.pos[0]+10,colony.pos[1]+10), 20)
         surf_phero_a_alpha = pygame.surfarray.pixels_alpha(surf_phero_a)
         surf_phero_a_alpha[:] = colony.phero[0]#.astype('uint8')
         del surf_phero_a_alpha
@@ -117,7 +123,7 @@ while spielaktiv:
         del surf_phero_b_alpha
         screen.blit(surf_phero_b,(0,0))
         for ant in colony.ants:
-            screen.blit(pygame.transform.rotozoom(ameise_frame[ant_frame],-ant.rotation-90,0.05),(ant.pos[0]-5,ant.pos[1]-5,))
+            screen.blit(pygame.transform.rotozoom(ameise_frame[ant_frame],-ant.rotation-90,0.05),(ant.pos[0]-9,ant.pos[1]-9,))
     #)pygame.transform.scale(ameise_frame[ant_frame],(20,20)),(ballpos_x,ballpos_y))
     
     pygame.display.flip()

@@ -6,8 +6,8 @@ def mask_array(arr,rot):
     return arr
 
 def get_neighborhood(map,pos,sensor_weite):
-    return map[int(pos[0])-sensor_weite:int(pos[0])+sensor_weite,
-                                   int(pos[1])-sensor_weite:int(pos[1])+sensor_weite]
+    return map[int(pos[0])-sensor_weite:int(pos[0])+sensor_weite+1,
+                                   int(pos[1])-sensor_weite:int(pos[1])+sensor_weite+1]
         
     pass
 
@@ -27,7 +27,7 @@ class ant():
         self.pos = pos
         self.colony = colony
         self.umwelt = colony.umwelt
-        self.rotation = rot
+        self.rotation = 360*np.random.random()
         self.geschwindigkeit = geschwindigkeit 
         self.name = name
         self.vis_obj = vis_obj
@@ -42,19 +42,19 @@ class ant():
         #Futter in der naehe?
         if not self.trage_obj:
             for food in self.umwelt.food_places:
-                if dis_pos(food.pos,self.pos) <20:
+                if dis_pos(food.pos,self.pos) <40:
                     self.trage_obj = True
                     food.amount -=1
-                    #print('FUTTER')
+                    print('FUTTER')
                     self.rotation+=180
                     self.count_event=0
         #colonie in der naehe
         if self.trage_obj:
             for colony in self.umwelt.colonys:
-                if dis_pos(colony.pos,self.pos) <20:
+                if dis_pos(colony.pos,self.pos) <40:
                     self.trage_obj = False
                     colony.food +=1
-                    #print(colony.food)
+                    print(colony.food)
                     self.rotation+=180
                     self.count_event=0
         #neue_Richtung?
@@ -76,14 +76,15 @@ class ant():
         #     self.rotation += +60*np.random.random() -30
         # else:
         #     self.rotation += +40*np.random.random() +30
-        if max([links,rechts,mitte])<15:
-            if np.random.random()<0.3:
-                self.rotation += -45+90* np.random.random()
-        else:
-            if links>mitte and links >rechts:
-                self.rotation -= 10
-            elif rechts>mitte and rechts > links:
-                self.rotation +=10
+        if self.count_event%6 ==0:
+            if max([links,rechts,mitte])<20:
+                if np.random.random()<0.1:
+                    self.rotation += -45+90* np.random.random()
+            else:
+                if links>mitte and links >rechts:
+                    self.rotation -= 45
+                elif rechts>mitte and rechts > links:
+                    self.rotation +=45
             
         
         # auswertung
@@ -91,27 +92,60 @@ class ant():
         #bewegung
 
 
-        if self.rotation<0:
+        while self.rotation<0:
             self.rotation += 360
-        if self.rotation>0:
+        while self.rotation>360:
             self.rotation -= 360
+        pos_i = (int(self.pos[0]),int( self.pos[1]))
+        col_map = get_neighborhood(self.umwelt.map,pos_i,1)
+        
+        move_x = np.cos(self.rotation/180*np.pi)#*self.geschwindigkeit
+        move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
+        #pos_i_neu = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
+        #colmap_ 0 ist wand 1 ist frei
+        
+        i,j = np.where(col_map == 0)
 
-        move_x = np.cos(self.rotation/180*np.pi)*self.geschwindigkeit
-        move_y = np.sin(self.rotation/180*np.pi)*self.geschwindigkeit
-        if self.pos[1] + move_y > self.umwelt.hoehe-20 or self.pos[1]+move_y < 0:
-            move_y = move_y * -1
 
-        if self.pos[0] + move_x > self.umwelt.breite-20 or self.pos[0]+move_x < 0:
-            move_x = move_x * -1
+        #if col_map[int(self.pos[0]+move_x)-int(pos_i[0]),int(self.pos[1]+move_y)-int(pos_i[1])]==0: 
+        if len(i)>0:    
+            i,j = np.where(col_map == 1)
+            if len(i) == 0:
+                move_y = 0
+                move_x = 0
+                print(col_map,i,j,self.pos)
+                print('ant in the wall')
+            else:
+                
+                x = np.random.randint(len(i))
+                #print(col_map,i,j,x,self.pos)
+                move_x = (i[x]-1)
+                move_y = (j[x]-1)
+            # self.rotation = np.random.random()*360
+            # move_x = np.cos(self.rotation/180*np.pi)#*self.geschwindigkeit
+            # move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
+        
+        # if self.pos[1] + move_y > self.umwelt.hoehe-20 or self.pos[1]+move_y < 0:
+        #     move_y = move_y * -1
+
+        # if self.pos[0] + move_x > self.umwelt.breite-20 or self.pos[0]+move_x < 0:
+        #     move_x = move_x * -1
         self.pos = (self.pos[0]+move_x, self.pos[1]+move_y)
         pos_i = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
         
+        #get_neighborhood(self.umwelt.map,())
 
-        change_val = 255-255*f_logistic(self.count_event/100-3,1,1,0.5)
-        if not self.trage_obj: # suche futter
-            self.colony.change_phero(0,change_val,pos_i)
-        else: #suche colony
-            self.colony.change_phero(1,change_val,pos_i)
+        #pheromone
+
+        if self.count_event%6 == 0:
+            change_val = 255-255*f_logistic(self.count_event/100-3,1,1,0.5)
+            change_val = 255
+            if not self.trage_obj: # suche futter
+                #change_val = min(255,50+255-255*f_logistic(self.count_event/100-3,1,1,0.5))
+                self.colony.change_phero(0,change_val,pos_i)
+            else: #suche colony
+                #change_val = min(255,150+255-255*f_logistic(self.count_event/100-3,1,1,0.5))
+                self.colony.change_phero(1,change_val,pos_i)
 
         if move_x != 0:
             self.rotation = np.arctan2(-move_y, move_x)/np.pi*(-180)
