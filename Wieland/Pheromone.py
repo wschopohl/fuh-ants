@@ -25,7 +25,7 @@ class Pheromone:
         if self.represents <= 0: self.represents = 1
         self.intensity -= (amount * math.ceil(self.represents))
         if self.intensity <= 0:
-            if self.sprite != None: self.sprite.remove()
+            if self.sprite != None: self.sprite.kill()
             self.world.remove(self)
 
     def update(self):

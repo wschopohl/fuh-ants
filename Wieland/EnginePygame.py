@@ -135,6 +135,7 @@ class PGFoodCluster(pygame.sprite.Sprite):
         self.update()
     
     def update(self):
+        if self.foodcluster.amount <= 0: self.kill()
         self.image = pygame.Surface((self.foodcluster.size()*2, self.foodcluster.size()*2), pygame.SRCALPHA)   # per-pixel alpha
         pygame.draw.circle(self.image, Colors.FoodCluster, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())
         self.rect = self.image.get_rect()
