@@ -15,11 +15,9 @@ class FoodCluster:
         return Config.AntFoodSize + self.amount * Config.FoodSize
     
     def take(self, units):
+        if self.amount <= 0: return 0
         taken = units
-        if self.amount - units < 0:
-            taken = self.amount
-        else:
-            taken = units
+        if self.amount - units < 0: taken = self.amount
         self.amount -= units
 
         if self.sprite != None:

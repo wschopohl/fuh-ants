@@ -159,12 +159,12 @@ class PGPheromone(pygame.sprite.Sprite):
         pheromone.setSprite(self)
         self.image = PGPheromone.pheromone_images[pheromone.type].copy()
         self.rect = self.image.get_rect()
-        self.rect.x = self.pheromone.position[0] - self.rect.width / 2
-        self.rect.y = self.pheromone.position[1] - self.rect.height / 2
         self.update()
 
     def update(self):
-        intensity = (self.pheromone.intensity * 255) % 255
+        intensity = (self.pheromone.intensity * 255)
+        self.rect.x = self.pheromone.position[0] - self.rect.width / 2
+        self.rect.y = self.pheromone.position[1] - self.rect.height / 2
         # print(intensity)
         self.image.set_alpha(intensity)
 
