@@ -18,3 +18,4 @@ FoodSize = 0.3
 
 PheromoneSize = 4
 PheromoneDecay = 0.001
+PheromoneMapTileSize = 10
