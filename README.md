@@ -10,7 +10,8 @@ pip install pygame
 pip install numpy
 ```
 
-Ausführen der drei Versionen (unix code)
+Ausführen der drei Versionen (unix code). Wegen den Assets ist es (zum Teil) wichtig
+das jeweilige Skript im Ordner selber auszuführen.
 ```
 cd Johannes
 python main.py
