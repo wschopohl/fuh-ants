@@ -2,7 +2,7 @@ from random import randint
 import math
 import numpy as np
 
-from Pheromone import Pheromone, Type as PheromoneType
+from Pheromone import Pheromone, Type
 from CollisionPygame import CollisionPygame
 
 import Config
@@ -24,6 +24,7 @@ class Ant:
         self.sprite = sprite
 
     def move(self):
+        self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         self.randomChangeDirection()
         self.dropPheromone()
@@ -48,20 +49,18 @@ class Ant:
 
     def dropPheromone(self):
         if self.step % Config.AntPheromoneDrop != 0: return
-        pheromnoe_type = PheromoneType.HOME
-        if self.carry_food > 0: pheromnoe_type = PheromoneType.FOOD
-        self.nest.world.add(Pheromone(self.position, pheromnoe_type, Config.PheromoneIntensity))
+        pheromnoe_type = Type.HOME if self.carry_food == 0 else Type.FOOD
+        self.nest.world.add(Pheromone(self.position, pheromnoe_type, 1))
 
     def randomChangeDirection(self):
-        self.step += 1
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = sense_angle
-            
-        self.direction = (self.direction + da) % 360
+            self.direction = (sense_angle + da * 0.5) % 360
+        else:   
+            self.direction = (self.direction + da) % 360
 
         if self.sprite != None:
             self.sprite.updateImage()
@@ -73,58 +72,55 @@ class Ant:
         self.dy = -Config.AntMoveDistance * math.sin(math.radians(self.direction))
 
     def sense(self):
-        pheromone_type = PheromoneType.FOOD
-        if self.carry_food > 0: pheromone_type = PheromoneType.HOME
+        pheromone_type = Type.FOOD if self.carry_food == 0 else Type.HOME
 
-        if pheromone_type == PheromoneType.HOME:
+        # if near to nest ignore pheromones and go directly in direction of nest
+        if pheromone_type == Type.HOME:
             dnest = calculate_distance(self.position, self.nest.position)
             if dnest <= Config.AntSenseRadius:
-                return calculate_angle(self.position, self.nest.position)
+                return fast_angle(self.position[0] - self.nest.position[0], self.position[1] - self.nest.position[1])
             
-        if pheromone_type == PheromoneType.FOOD:
+        # if near to food ignore pheromones and go directly in direction of food
+        if pheromone_type == Type.FOOD:
             for foodcluster in self.nest.world.foodclusters:
                 if foodcluster.amount <= 0: continue
                 dfood = calculate_distance(self.position, foodcluster.position)
                 if dfood <= Config.AntSenseRadius:
-                    return calculate_angle(self.position, foodcluster.position)
+                    return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
         
         near_pheromones = Ant.collision.getNearby(self, self.nest.world.pheromones, Config.AntSenseRadius, pheromone_type.value)
-        if len(near_pheromones) == 0: return None
-        combined_angle = 0
-        angle_count = 0
-        for pheromone in near_pheromones:
-            angle = (calculate_angle(self.position, pheromone.position))# * pheromone.intensity / Config.PheromoneIntensity)
-
-            if angle != None: 
-                if abs(self.direction - angle) < Config.AntFieldOfView:
-                    combined_angle += angle
-                    angle_count += 1
         
-        if angle_count == 0: return None
-        return (combined_angle / angle_count)
+        return self.calculate_pheromone_vector(near_pheromones)
 
+    def calculate_pheromone_vector(self, pheromones):
+        if len(pheromones) == 0: return None
 
-def calculate_angle(p1, p2):
-    dist = calculate_distance(p1, p2)
-    if dist < 2: return None
-
-    dx = p1[0] - p2[0]
-    dy = p1[1] - p2[1]
-
-    if dx == 0:
-        if dy > 0: return 90
-        else: return 270
-    if dy == 0:
-        if dx > 0: return 180
-        else: return 0
-
-    deg = math.degrees(math.atan(dy/dx))
-    if dx < 0:
-        return (deg * -1) % 360
-    return (180 - deg) % 360
+        vector = {'x': 0, 'y': 0}
+        for p in pheromones:
+            dx = self.position[0] - p.position[0]
+            dy = self.position[1] - p.position[1]
+            length = math.sqrt(dx*dx + dy*dy)
+            if length <= Config.AntSenseRadius:
+                angle = fast_angle(dx, dy)
+                if angle != None and abs(angle - self.direction) <= Config.AntFieldOfView:
+                    length_factor = (1 - length / Config.AntSenseRadius)
+                    vector['x'] += (dx * p.intensity * length_factor)
+                    vector['y'] += (dy * p.intensity * length_factor)
+        
+        if vector['x'] == 0 == vector['y']: return None
+        return fast_angle(vector['x'], vector['y'])
 
 
 def calculate_distance(p1, p2):
     dx = p1[0] - p2[0]
     dy = p1[1] - p2[1]
     return math.sqrt(dx*dx + dy*dy)
+
+def fast_angle(dx, dy):
+    if dx == 0 == dy: return None
+    if dx == 0:
+        if dy > 0: return 90
+        else: return 270
+    a = math.degrees(math.atan(dy/-dx))
+    if dx > 0: return (180 + a) % 360
+    return a % 360

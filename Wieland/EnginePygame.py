@@ -164,7 +164,7 @@ class PGPheromone(pygame.sprite.Sprite):
         self.update()
 
     def update(self):
-        intensity = (self.pheromone.intensity / Config.PheromoneIntensity) * 255
+        intensity = (self.pheromone.intensity * 255) % 255
         # print(intensity)
         self.image.set_alpha(intensity)
 
