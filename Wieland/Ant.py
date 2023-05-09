@@ -65,7 +65,7 @@ class Ant:
         sense_angle = self.sense()
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 1) % 360
+            self.direction = (sense_angle + da * 0.5) % 360
         else:   
             self.direction = (self.direction + da) % 360
 
