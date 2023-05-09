@@ -6,6 +6,7 @@ from Ant import Ant
 from FoodCluster import FoodCluster
 from Pheromone import Pheromone
 from CollisionPygame import CollisionPygame
+from PheromoneMap import PheromoneMap
 import Config
 import ThreadHelper
 
@@ -17,6 +18,7 @@ class World:
         self.ants = []
         self.foodclusters = []
         self.pheromones = []
+        self.pheromoneMap = PheromoneMap(self)
         self.collision = CollisionPygame()
 
     def setup(self, render_engine):
@@ -34,12 +36,14 @@ class World:
             self.foodclusters.append(object)
             self.render_engine.add(object)
         elif type(object) is Pheromone:
-            object.setWorld(self)
-            self.pheromones.append(object)
-            self.render_engine.add(object)
+            if self.pheromoneMap.add(object) == True:
+                object.setWorld(self)
+                self.pheromones.append(object)
+                self.render_engine.add(object)
 
     def remove(self, object):
         if type(object) is Pheromone:
+            self.pheromoneMap.remove(object)
             self.pheromones.remove(object)
         
     def run(self):
