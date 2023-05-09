@@ -9,7 +9,7 @@ import Pheromone
 import Colors
 import Screen
 
-Screen.init()
+s = Screen()
 
 # Ant-Image WIDTH and HEIGHT Setting
 ANT_IMAGE_WIDTH = 20
@@ -24,7 +24,7 @@ ANT_IMAGE = (pygame.transform.scale(pygame.image.load(os.path.join('Assets','ant
 clock = pygame.time.Clock()
 
 def main():
-
+    
     
     last_update_time = time.time()
     pheromone_time = time.time()
@@ -33,7 +33,7 @@ def main():
     
     run = True
     while run:
-        clock.tick(Screen.FPS)
+        clock.tick(screen.FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
