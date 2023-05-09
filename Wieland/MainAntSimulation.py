@@ -13,6 +13,8 @@ def main():
     # world.add(Nest(position = world.randomPosition(100), spawn_rate=50, max_ants = 500))
     # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
     # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
+    # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
+    # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
 
     world.add(Nest(position = (600,400), spawn_rate=50, max_ants = 500))
     world.add(FoodCluster(position = (100,100), amount=1000))
