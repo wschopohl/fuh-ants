@@ -10,7 +10,7 @@ class Pheromone:
     def __init__(self, position, type, intensity):
         self.position = position
         self.type = type.value
-        self.intensity = 1
+        self.intensity = intensity
         self.sprite = None
         self.represents = 1
     

@@ -17,6 +17,7 @@ class Ant:
         self.carry_food = 0
         self.max_carry = 1
         self.step = 0
+        self.pheromone_intensity = 1
         self.sprite = None
         self.calculateMoveVectors()
 
@@ -24,6 +25,7 @@ class Ant:
         self.sprite = sprite
 
     def move(self):
+        self.pheromone_intensity -= (Config.PheromoneDecay / 10)
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         self.randomChangeDirection()
@@ -35,22 +37,27 @@ class Ant:
 
     def take(self, foodcluster):
         if self.carry_food >= self.max_carry: return
+        self.pheromone_intensity = 1
         self.carry_food += foodcluster.take(self.max_carry)
         self.turnaround()
         self.sprite.updateImage()
 
     def deliver(self, nest):
-        if self.carry_food == 0: return
         if self.nest != nest: return # don't deliver to unknown nests
+        self.pheromone_intensity = 1
+        if self.carry_food == 0: return
         nest.deliver(self.carry_food)
         self.carry_food = 0
-        self.turnaround()
+        # self.turnaround()
+        self.position = self.nest.position
+        self.direction = randint(0,360)
         self.sprite.updateImage()
 
     def dropPheromone(self):
         if self.step % Config.AntPheromoneDrop != 0: return
+        if self.pheromone_intensity <= 0: return
         pheromnoe_type = Type.HOME if self.carry_food == 0 else Type.FOOD
-        self.nest.world.add(Pheromone(self.position, pheromnoe_type, 1))
+        self.nest.world.add(Pheromone(self.position, pheromnoe_type, self.pheromone_intensity))
 
     def randomChangeDirection(self):
         if self.step % Config.AntAngleStep != 0: return

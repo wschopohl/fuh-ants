@@ -3,7 +3,7 @@ AntAngleVariation = 20
 AntAngleStep = 20
 AntSleepTime = 0.001
 AntPheromoneDrop = 20
-AntSenseRadius = 150
+AntSenseRadius = 200
 AntFieldOfView = 120
 
 
