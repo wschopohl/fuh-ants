@@ -1,4 +1,6 @@
-# Define Colors in RGB
+class COLORS:
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+    # Define Colors in RGB
+
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
