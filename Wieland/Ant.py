@@ -60,6 +60,8 @@ class Ant:
         self.nest.world.add(Pheromone(self.position, pheromnoe_type, self.pheromone_intensity))
 
     def randomChangeDirection(self):
+        if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
+            self.direction = fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()

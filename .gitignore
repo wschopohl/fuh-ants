@@ -1,4 +1,4 @@
 .DS_STORE
-Johannes/.venv
-Johannes/__pycache__
-Wieland/.venv
+__pycache__
+.venv
+.vscode
