@@ -8,12 +8,17 @@ Benötigte Module:
 ```
 pip install pygame
 pip install numpy
+pip install bresenham
+pip install colour
 ```
 
 Ausführen der drei Versionen (unix code). Wegen den Assets ist es (zum Teil) wichtig
 das jeweilige Skript im Ordner selber auszuführen.
 ```
 cd Johannes
+python main.py
+
+cd Lennart
 python main.py
 
 cd Michael
@@ -31,3 +36,7 @@ python MainAntSimulation.py
 [Optimizations](https://github.com/wschopohl/fuh-ants/blob/master/documents/optimizations/Optimizations.md)
 
 [Fragen](https://github.com/wschopohl/fuh-ants/blob/master/documents/questions/Questions.md)
+
+Git Test
+
+Das ist der Wieland
