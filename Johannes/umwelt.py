@@ -36,7 +36,7 @@ class colony():
         for ant in self.ants:
             ant.update()
         for i,phero in enumerate(self.phero):
-            self.phero[i] = phero*0.992
+            self.phero[i] = phero*0.99
     
     def change_phero(self,ind,val,pos):
         #self.phero[ind][pos[0]-4:pos[0]+4,pos[1]-4:pos[1]+4] =min(max(0, self.phero[ind][pos[0],pos[1]]+val),255)

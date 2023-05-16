@@ -10,7 +10,9 @@ def get_neighborhood(map,pos,sensor_weite):
                                    int(pos[1])-sensor_weite:int(pos[1])+sensor_weite+1]
         
     pass
-
+def sum_neighborhood(map,pos,sensor_weite):
+    return sum(map[int(pos[0])-sensor_weite:int(pos[0])+sensor_weite+1,
+                                   int(pos[1])-sensor_weite:int(pos[1])+sensor_weite+1])
 def simple_sensor(map):
     pos = [(7,4),(7,7),(4,7),(1,7),(1,4),(1,1),(4,1),(7,1)]
     return [np.sum(get_neighborhood(map,x,1)) for x in pos]
@@ -35,14 +37,37 @@ class ant():
         self.trage_obj = None
         self.count_event=0
         
+    def sensor(self,phero):
+        sensor_fov={-60:3,-30:7,0:10,30:7,60:3}
+        sensor_depth = {15:4,10:6,5:10}
+        sensor_list  = []
+        # for y in sensor_fov.keys():
+        #     deep_list = []
+        #     for x in sensor_depth.keys():
+        #         deep_list.append(sum(sum_neighborhood(phero,(int(self.pos[0]+np.cos((self.rotation+y)/180*np.pi)),
+        #                                               int(self.pos[1]+np.sin((self.rotation+y)/180*np.pi))),2)
+        #                 )*sensor_depth[x])
+        #     sensor_list.append(sum(deep_list))
+        # sum(sensor_list)
 
+        weighted_dir=np.array([sum(
+                        [sum(sum_neighborhood(phero,(int(self.pos[0]+np.cos((self.rotation+y)/180*np.pi)*x),
+                                                      int(self.pos[1]+np.sin((self.rotation+y)/180*np.pi)*x)),2)
+                        )*sensor_depth[x] for x in sensor_depth.keys()]) for y in sensor_fov.keys()])
+        weight= sum(weighted_dir)
+        if weight!=0:
+            weighted_dir =weighted_dir/weight
+            new_dir =sum([weighted_dir[i]*y for i,y in enumerate(sensor_fov.keys())])
+        else:
+            new_dir=0
+        return new_dir
     def update(self):
 
         # sensor
         #Futter in der naehe?
         if not self.trage_obj:
             for food in self.umwelt.food_places:
-                if dis_pos(food.pos,self.pos) <40:
+                if dis_pos(food.pos,self.pos) <20:
                     self.trage_obj = True
                     food.amount -=1
                     print('FUTTER')
@@ -51,23 +76,43 @@ class ant():
         #colonie in der naehe
         if self.trage_obj:
             for colony in self.umwelt.colonys:
-                if dis_pos(colony.pos,self.pos) <40:
+                if dis_pos(colony.pos,self.pos) <20:
                     self.trage_obj = False
                     colony.food +=1
                     print(colony.food)
                     self.rotation+=180
                     self.count_event=0
         #neue_Richtung?
-        if not self.trage_obj:
-            arr = simple_sensor(get_neighborhood(self.colony.phero[1],self.pos,self.sensor_weite))
-        else:
-            arr = simple_sensor(get_neighborhood(self.colony.phero[0],self.pos,self.sensor_weite))
-        sector_i = int((self.rotation+22.5)/45)%8 #kaufmaennisch runden
-        bias = 1
-        links = arr[(sector_i-1)%8]+bias
-        mitte = arr[(sector_i)%8]+bias
-        rechts = arr[(sector_i+1)%8]+bias
-        
+        # if not self.trage_obj:
+        #     arr = simple_sensor(get_neighborhood(self.colony.phero[1],self.pos,self.sensor_weite))
+        # else:
+        #     arr = simple_sensor(get_neighborhood(self.colony.phero[0],self.pos,self.sensor_weite))
+        # sector_i = int((self.rotation+22.5)/45)%8 #kaufmaennisch runden
+        # bias = 1
+        # links = arr[(sector_i-1)%8]+bias
+        # mitte = arr[(sector_i)%8]+bias
+        # rechts = arr[(sector_i+1)%8]+bias
+
+        # sensor_fov={-120:2,-90:4,-60:6,-30:8,0:10,30:8,60:6,90:4,120:2}
+        # sensor_depth = {25:2,20:4,15:6,10:8,5:10}
+
+        # sensor_fov={-60:6,-30:8,0:10,30:8,60:6}
+        # sensor_depth = {15:6,10:8,5:10}
+        if self.count_event%6 ==0:
+            # new_dir=sum([sum([sum(get_neighborhood(self.colony.phero[1],(self.pos[0]+np.cos((self.rotation+y)/180*np.pi),
+            #                                                     self.pos[1]+np.sin((self.rotation+y)/180*np.pi)),2)
+            #             )*sensor_depth[x] for x in sensor_depth.keys()])/30*sensor_fov[y] for y in sensor_fov.keys()])/50
+            
+            if not self.trage_obj:
+                new_dir=self.sensor(self.colony.phero[1])
+            else:
+                new_dir=self.sensor(self.colony.phero[0])
+
+            if new_dir==0:
+                if np.random.random()<0.3:
+                    self.rotation = self.rotation-30+np.random.random()*60
+            else:
+                self.rotation += new_dir
         # weight = links+mitte+rechts
         # new_dir = np.random.random()
         # if new_dir < links/weight:
@@ -76,15 +121,15 @@ class ant():
         #     self.rotation += +60*np.random.random() -30
         # else:
         #     self.rotation += +40*np.random.random() +30
-        if self.count_event%6 ==0:
-            if max([links,rechts,mitte])<20:
-                if np.random.random()<0.1:
-                    self.rotation += -45+90* np.random.random()
-            else:
-                if links>mitte and links >rechts:
-                    self.rotation -= 45
-                elif rechts>mitte and rechts > links:
-                    self.rotation +=45
+        # if self.count_event%6 ==0:
+        #     if max([links,rechts,mitte])<20:
+        #         if np.random.random()<0.1:
+        #             self.rotation += -45+90* np.random.random()
+        #     else:
+        #         if links>mitte and links >rechts:
+        #             self.rotation -= 45
+        #         elif rechts>mitte and rechts > links:
+        #             self.rotation +=45
             
         
         # auswertung

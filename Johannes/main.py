@@ -25,8 +25,8 @@ pygame.init()
 
 #BG/map
 
-bg_map = pygame.image.load("map_01.png")
-ameise = pygame.image.load("walking_ant.png")
+bg_map = pygame.image.load("Johannes/map_01.png")
+ameise = pygame.image.load("Johannes/walking_ant.png")
 
 ameise_frame_h = 248
 ameise_frame_b = 202
@@ -107,13 +107,13 @@ while spielaktiv:
             
 
     for food in Umwelt.food_places:
-        pygame.draw.circle(screen, SCHWARZ, (food.pos[0]+10,food.pos[1]+10), 20)
+        pygame.draw.circle(screen, SCHWARZ, food.pos, 20)
 
     for colony in Umwelt.colonys:
         #äphero_map = pygame.surfarray.make_surface(colony.phero[0])
         #phero_map.set_colorkey(0)
         #surf_phero_a.set_alpha(colony.phero[0])
-        pygame.draw.circle(screen, GRAU, (colony.pos[0]+10,colony.pos[1]+10), 20)
+        pygame.draw.circle(screen, GRAU, colony.pos, 20)
         surf_phero_a_alpha = pygame.surfarray.pixels_alpha(surf_phero_a)
         surf_phero_a_alpha[:] = colony.phero[0]#.astype('uint8')
         del surf_phero_a_alpha
