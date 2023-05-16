@@ -38,7 +38,7 @@ class ant():
         self.count_event=0
         
     def sensor(self,phero):
-        sensor_fov={-60:3,-30:7,0:10,30:7,60:3}
+        sensor_fov={-90:1,-60:3,-30:7,0:10,30:7,60:3,90:1}
         sensor_depth = {15:4,10:6,5:10}
         sensor_list  = []
         # for y in sensor_fov.keys():
@@ -108,11 +108,17 @@ class ant():
             else:
                 new_dir=self.sensor(self.colony.phero[0])
 
-            if new_dir==0:
-                if np.random.random()<0.3:
-                    self.rotation = self.rotation-30+np.random.random()*60
+            # if new_dir==0:
+            #     if np.random.random()<0.3:
+            #         self.rotation = self.rotation-30+np.random.random()*60
+            # else:
+            #     self.rotation += new_dir
+
+            #if np.random.random()<0.3:
+            if new_dir == 0:
+                self.rotation = self.rotation-30+np.random.random()*60
             else:
-                self.rotation += new_dir
+                self.rotation = self.rotation-30+np.random.random()*60+new_dir
         # weight = links+mitte+rechts
         # new_dir = np.random.random()
         # if new_dir < links/weight:
@@ -170,11 +176,11 @@ class ant():
             # move_x = np.cos(self.rotation/180*np.pi)#*self.geschwindigkeit
             # move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
         
-        # if self.pos[1] + move_y > self.umwelt.hoehe-20 or self.pos[1]+move_y < 0:
-        #     move_y = move_y * -1
+        if self.pos[1] + move_y > self.umwelt.hoehe-20 or self.pos[1]+move_y < 0:
+            move_y = move_y * -1
 
-        # if self.pos[0] + move_x > self.umwelt.breite-20 or self.pos[0]+move_x < 0:
-        #     move_x = move_x * -1
+        if self.pos[0] + move_x > self.umwelt.breite-20 or self.pos[0]+move_x < 0:
+            move_x = move_x * -1
         self.pos = (self.pos[0]+move_x, self.pos[1]+move_y)
         pos_i = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
         
@@ -183,8 +189,9 @@ class ant():
         #pheromone
 
         if self.count_event%6 == 0:
-            change_val = 255-255*f_logistic(self.count_event/100-3,1,1,0.5)
-            change_val = 255
+            change_val = 255-255*f_logistic(self.count_event/200-3,1,1,0.5)
+            #change_val = 255
+            change_val = 255-int(self.count_event/3+1)
             if not self.trage_obj: # suche futter
                 #change_val = min(255,50+255-255*f_logistic(self.count_event/100-3,1,1,0.5))
                 self.colony.change_phero(0,change_val,pos_i)
