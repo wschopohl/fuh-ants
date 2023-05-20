@@ -5,7 +5,7 @@ import numpy as np
 
 class Screen:
 
-    #window = None
+#window = None
    # FPS = 60
    # WIDTH = 800
    # HEIGHT = 600
@@ -25,7 +25,7 @@ class Screen:
         pygame.display.set_caption("Ant Simulation")
 
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
-        backgroundImg = pygame.image.load("wallBackground.jpg")
+       # backgroundImg = pygame.image.load("wallBackground.jpg")
 
 
     def fill(self, col):

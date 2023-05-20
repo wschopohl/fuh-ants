@@ -28,6 +28,7 @@ class Ant(pygame.sprite.Sprite):
         self.vel_x = 0
         self.vel_y = 0
 
+
     def antImage(self):
         ANT_IMAGE_RECT = self.rect
           

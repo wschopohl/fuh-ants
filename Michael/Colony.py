@@ -22,12 +22,9 @@ class Colony:
             ant.update(elapsed)
 
             # Make sure the ant is not moving out of the window
-            if ant.rect.x <= 0 or ant.rect.x >= self.screen.WIDTH:
-                ant.rect.x *= -1
-
-            if ant.rect.y <= 0 or ant.rect.y >= self.screen.HEIGHT:
-             ant.rect.y *= -1
-
+            collide = ant.colliderect(self.screen.window.get_rect)
+            if collide:
+                print("true")
 
 
 
