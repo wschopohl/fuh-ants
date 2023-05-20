@@ -25,21 +25,8 @@ class Screen:
         pygame.display.set_caption("Ant Simulation")
 
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
+        backgroundImg = pygame.image.load("wallBackground.jpg")
+
 
     def fill(self, col):
         self.window.fill(col)
-
-
-    def blit (self, ant_img):
-        ROTATED_ANT_IMAGE = ant_img[0]
-        ANT_IMAGE_RECT = ant_img[1]
-        self.window.blit(ROTATED_ANT_IMAGE, ANT_IMAGE_RECT)
-
-    def draw(self, colony):
-
-        for ant in colony.ants:
-            ant_image = ant.antImage()
-
-            self.blit(ant_image)
-
-    
