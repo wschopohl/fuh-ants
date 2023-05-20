@@ -2,5 +2,9 @@ class COLORS:
 
     # Define Colors in RGB
 
-    WHITE = (255, 255, 255)
-    BLACK = (0, 0, 0)
+    def white():
+        return (255, 255, 255)
+    
+    
+    def black():
+        return (0, 0, 0)
