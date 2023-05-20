@@ -13,6 +13,8 @@ from Ant import Ant
 from Pheromone import Pheromone
 from Colors import COLORS
 
+from Colony import Colony
+
 
 
 
@@ -33,9 +35,8 @@ def main():
     
     run = True
 
-    # Anzahl der Ameisen
-    for i in range(10):
-        ants.append(Ant(screen))
+    colony = Colony (screen, 10)
+   
 
     while run:
         clock.tick(screen.FPS)
@@ -49,16 +50,7 @@ def main():
         last_update_time = current_time
 
         
-        for ant in ants:
-            ant.update(elapsed)
-
-
-            # Make sure the ant is not moving out of the window
-            if ant.ant_pos[0] <= 0 or ant.ant_pos[0] >= screen.WIDTH:
-                ant.ant_pos[0] *= -1
-
-            if ant.ant_pos[1] <= 0 or ant.ant_pos[1] >= screen.HEIGHT:
-             ant.ant_pos[1] *= -1
+        colony.update(elapsed)
 
 
         # Generate Pheromone-Trails
@@ -72,15 +64,13 @@ def main():
         
 
         # Draw Pheromone-Trails
-
+        '''
         for position in pheromone_positions:
             pygame.draw.circle(screen.window, COLORS.black(), position, 1)
-        
+        '''
         # Draw Ants
-        for ant in ants:
-            ant_image = ant.antImage()
-
-            screen.blit(ant_image)
+        
+        screen.draw(colony)
     
         pygame.display.update()
 

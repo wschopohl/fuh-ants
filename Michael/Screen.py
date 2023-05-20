@@ -1,7 +1,7 @@
 import pygame
 import Colors
 
-from numpy import * 
+import numpy as np
 
 class Screen:
 
@@ -34,5 +34,12 @@ class Screen:
         ROTATED_ANT_IMAGE = ant_img[0]
         ANT_IMAGE_RECT = ant_img[1]
         self.window.blit(ROTATED_ANT_IMAGE, ANT_IMAGE_RECT)
+
+    def draw(self, colony):
+
+        for ant in colony.ants:
+            ant_image = ant.antImage()
+
+            self.blit(ant_image)
 
     

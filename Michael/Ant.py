@@ -13,9 +13,11 @@ class Ant:
     # Import Ant-Image and resize it
     ANT_IMAGE = (pygame.transform.scale(pygame.image.load(os.path.join('Assets','ant.png')), (ANT_IMAGE_WIDTH,ANT_IMAGE_HEIGHT))).convert_alpha()
     
-    def __init__(self, sc ,maxSpeed = 100):
+
+    def __init__(self, sc, colony ,maxSpeed = 100):
         self.ant_pos = [sc.WIDTH/2, sc.HEIGHT/2]
         self.maxSpeed = maxSpeed
+        self.colony = colony
         self.angle = 0
         self.vel_x = 0
         self.vel_y = 0
