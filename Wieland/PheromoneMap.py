@@ -41,6 +41,7 @@ class PheromoneMap:
         for my in range(y-tiles,y+tiles):
             for mx in range(x-tiles,x+tiles):
                 if(mx >= self.width or my >= self.height): continue
+                if(mx < 0 or my < 0): continue
                 if(self.map[type][my][mx] != None):
                     pheromones.append(self.map[type][my][mx])
         return pheromones

@@ -16,17 +16,34 @@ class Ant:
         self.step = 0
         self.pheromone_intensity = 1
         self.sprite = None
+        self.wallangle = 10
         self.calculateMoveVectors()
 
     def setSprite(self, sprite):
         self.sprite = sprite
 
     def move(self):
-        self.pheromone_intensity -= (Config.PheromoneDecay / 2)
+        self.pheromone_intensity -= (Config.PheromoneDecay / 5)
         self.step += 1
-        self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
-        self.randomChangeDirection()
+        oldpos = self.position
+        loops = 0
+        while True:
+            loops += 1
+            self.position = (oldpos[0] + self.dx, oldpos[1] + self.dy)
+            if self.checkCollision() == False: break
+            # if loops > 10: angle = randint(0,360)
+            # if loops > 100: break
+            # print(self.position, self.direction)
+            if loops % 1000 == 0: print(loops)
+            self.direction = (self.direction + self.wallangle) % 360
+            self.sprite.updateImage()
+            self.calculateMoveVectors()
+        # self.randomChangeDirection()
         self.dropPheromone()
+
+    def checkCollision(self):
+        if self.sprite == None: return
+        return self.sprite.collision(self.nest.world.map.sprite)
 
     def turnaround(self):
         self.direction = (self.direction + 180) % 360
@@ -62,14 +79,22 @@ class Ant:
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
+        oldangle = self.direction
+        newangle = oldangle
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 0.5) % 360
+            newangle = (sense_angle + da * 0.5) % 360
         else:   
-            self.direction = (self.direction + da) % 360
+            newangle = (self.direction + da) % 360
 
-        if self.sprite != None:
-            self.sprite.updateImage()
+        while True:
+            self.direction = newangle
+            if self.sprite != None:
+                self.sprite.updateImage()
+            if self.checkCollision() == False: break
+            newangle += self.wallangle
+
+        self.wallangle = newangle - oldangle
 
         self.calculateMoveVectors()
 

@@ -3,6 +3,7 @@ from Ant import Ant
 from Nest import Nest
 from FoodCluster import FoodCluster
 from Pheromone import Pheromone, Type as PheromoneType
+from Map import Map
 import Colors
 import Config
 
@@ -26,6 +27,7 @@ class EnginePygame:
         self.pgnests = pygame.sprite.Group()
         self.pgfoodclusters = pygame.sprite.Group()
         self.pgpheromones = pygame.sprite.Group()
+        self.pgmap = None
 
     def add(self, object):
         if type(object) is Ant:
@@ -40,6 +42,8 @@ class EnginePygame:
         if type(object) is Pheromone:
             pgpheromone = PGPheromone(object)
             self.pgpheromones.add(pgpheromone)
+        if type(object) is Map:
+            self.pgmap = PGMap(object)
         
     def startRenderLoop(self):
         running = True
@@ -54,6 +58,7 @@ class EnginePygame:
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
+            if self.pgmap != None: self.pgmap.draw(self.screen)
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
             self.pgpheromones.draw(self.screen)
@@ -92,24 +97,41 @@ class PGAnt(pygame.sprite.Sprite):
         self.ant = ant
         self.object = ant
         self.radius = Config.AntSenseRadius
+        self.mask = pygame.mask.Mask((0,0))
         ant.setSprite(self)
         PGAnt.loadImages()
         self.updateImage()
     
     def update(self):
-        self.rect.x = self.ant.position[0] - self.rect.width / 2
-        self.rect.y = self.ant.position[1] - self.rect.height / 2
+        renderMutex.acquire()
+        try:
+            self.rect.x = self.ant.position[0] - self.rect.width / 2
+            self.rect.y = self.ant.position[1] - self.rect.height / 2
+        except AttributeError:
+            pass
+        renderMutex.release()
 
     def updateImage(self):
+        renderMutex.acquire()
         deg = (self.ant.direction) -90
         self.image = PGAnt.original_image
-        renderMutex.acquire()
         if self.ant.carry_food > 0:
             self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
         else:    
             self.image = pygame.transform.rotate(PGAnt.original_image, deg)
-        renderMutex.release()
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
+        renderMutex.release()
+
+    def collision(self, map):
+        try:
+            mask = self.mask.overlap_mask(map.mask, (-(self.ant.position[0] - self.rect.width / 2), -(self.ant.position[1] - self.rect.height / 2)))
+            # self.image = mask.to_surface()
+            if mask.count() == 0: return False
+            return True
+        except AttributeError:
+            pass
+        return False
 
 
 class PGNest(pygame.sprite.Sprite):
@@ -171,3 +193,13 @@ class PGPheromone(pygame.sprite.Sprite):
 
     def remove(self):
         self.kill()
+
+class PGMap(pygame.sprite.Sprite):
+    def __init__(self, map):
+        self.image = pygame.image.load(map.image).convert_alpha()
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect()
+        map.setSprite(self)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)

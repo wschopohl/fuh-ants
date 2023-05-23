@@ -2,7 +2,7 @@ from World import World
 from Nest import Nest
 from FoodCluster import FoodCluster
 from EnginePygame import EnginePygame
-import Const
+from Map import Map
 
 def main():
     engine = EnginePygame()
@@ -16,11 +16,15 @@ def main():
     # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
     # world.add(FoodCluster(position = world.randomPosition(100), amount=1000))
 
-    world.add(Nest(position = (600,400), spawn_rate=50, max_ants = 500))
-    world.add(FoodCluster(position = (100,100), amount=1000))
-    world.add(FoodCluster(position = (1100,700), amount=1000))
-    world.add(FoodCluster(position = (100,700), amount=1000))
-    world.add(FoodCluster(position = (1100,100), amount=1000))
+    # world.add(Nest(position = (600,400), spawn_rate=50, max_ants = 500))
+    # world.add(FoodCluster(position = (100,100), amount=1000))
+    # world.add(FoodCluster(position = (1100,700), amount=1000))
+    # world.add(FoodCluster(position = (100,700), amount=1000))
+    # world.add(FoodCluster(position = (1100,100), amount=1000))
+
+    world.add(Map("assets/map_ugly.png"))
+    world.add(Nest(position = (100,420), spawn_rate=50, max_ants = 1))
+    world.add(FoodCluster(position = (1000,420), amount=1000))
 
     world.run()
     engine.startRenderLoop()  # sync call, execution waits here
