@@ -33,3 +33,14 @@ class PheromoneMap:
 
     def getMapCoordinates(self, position):
         return (math.floor(position[0] / Config.PheromoneMapTileSize), math.floor(position[1] / Config.PheromoneMapTileSize))
+    
+    def getNearby(self, position, radius, type):
+        x,y = self.getMapCoordinates(position)
+        tiles = math.ceil(radius / Config.PheromoneMapTileSize)
+        pheromones = []
+        for my in range(y-tiles,y+tiles):
+            for mx in range(x-tiles,x+tiles):
+                if(mx >= self.width or my >= self.height): continue
+                if(self.map[type][my][mx] != None):
+                    pheromones.append(self.map[type][my][mx])
+        return pheromones
