@@ -56,6 +56,7 @@ for n in range(62): #62 sprites auf 8x8 grid
 Umwelt = umwelt.umwelt(F_breite,F_hoehe)
 
 Umwelt.map = pygame.surfarray.array2d(bg_map)
+Umwelt.map = Umwelt.map*-1+1
 Umwelt.add_colony()
 
 

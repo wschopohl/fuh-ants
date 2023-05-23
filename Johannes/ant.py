@@ -23,6 +23,20 @@ def dis_pos(a,b):
 def f_logistic(x,G,k,f0):
     return G/(1+np.exp(-k*G*x)*((G/f0)-1))
 
+def sec2deg(i,j,ignore_middle =True):
+    i-=1
+    j-=1
+    if i!=0:
+        return np.arctan2(-j, i)/np.pi*(-180)
+    elif j!=0:       
+        return np.sign(j)*180
+    else:
+        if ignore_middle:
+            return 1000
+        else:
+            
+            raise ValueError
+
 class ant():
     def __init__(self, colony, pos=(120, 100), rot=45, name='', vis_obj=None, 
                  geschwindigkeit=1) -> None:
@@ -37,10 +51,11 @@ class ant():
         self.trage_obj = None
         self.count_event=0
         self.collsion = 0
+        self.stuck = 0
         
-    def sensor(self,phero):
-        sensor_fov={-90:1,-60:3,-30:7,0:10,30:7,60:3,90:1}
-        sensor_depth = {15:4,10:6,5:10}
+    def sensor(self,phero,sensor_fov={-90:1,-60:3,-30:7,0:10,30:7,60:3,90:1},sensor_depth = {15:4,10:6,5:10}):
+        
+        
         sensor_list  = []
         # for y in sensor_fov.keys():
         #     deep_list = []
@@ -99,7 +114,7 @@ class ant():
 
         # sensor_fov={-60:6,-30:8,0:10,30:8,60:6}
         # sensor_depth = {15:6,10:8,5:10}
-        if self.count_event%6 ==0:
+        if self.count_event%5 ==0:
             # new_dir=sum([sum([sum(get_neighborhood(self.colony.phero[1],(self.pos[0]+np.cos((self.rotation+y)/180*np.pi),
             #                                                     self.pos[1]+np.sin((self.rotation+y)/180*np.pi)),2)
             #             )*sensor_depth[x] for x in sensor_depth.keys()])/30*sensor_fov[y] for y in sensor_fov.keys()])/50
@@ -109,6 +124,9 @@ class ant():
             else:
                 new_dir=self.sensor(self.colony.phero[0])
 
+
+            col_dir = self.sensor(self.umwelt.map,sensor_fov={-30:3,-15:7,0:10,15:7,30:3},sensor_depth = {10:6,5:10})
+            new_dir = new_dir-col_dir
             # if new_dir==0:
             #     if np.random.random()<0.3:
             #         self.rotation = self.rotation-30+np.random.random()*60
@@ -119,7 +137,7 @@ class ant():
             if new_dir == 0:
                 self.rotation = self.rotation-30+np.random.random()*60
             else:
-                self.rotation = self.rotation-30+np.random.random()*60+new_dir
+                self.rotation = self.rotation-30+np.random.random()*30+new_dir
         # weight = links+mitte+rechts
         # new_dir = np.random.random()
         # if new_dir < links/weight:
@@ -154,16 +172,20 @@ class ant():
         move_x = np.cos(self.rotation/180*np.pi)#*self.geschwindigkeit
         move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
         #pos_i_neu = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
+        
+        
         #colmap_ 0 ist wand 1 ist frei
+
+
         ##
         ## Kollision
         ##
-        i,j = np.where(col_map == 0)
+        i,j = np.where(col_map == 1)  # 
 
 
         #if col_map[int(self.pos[0]+move_x)-int(pos_i[0]),int(self.pos[1]+move_y)-int(pos_i[1])]==0: 
         if len(i)>0:    
-            i,j = np.where(col_map == 1)
+            i,j = np.where(col_map == 0)
             if len(i) == 0:
                 move_y = 0
                 move_x = 0
@@ -171,19 +193,36 @@ class ant():
                 print('ant in the wall')
             else:
                 
-                x = np.random.randint(len(i))
+                
                 #print(col_map,i,j,x,self.pos)
-                move_x = (i[x]-1)
-                move_y = (j[x]-1)
+                mindeg = [sec2deg(i[x],j[x])-self.rotation for x in range(len(i))]
+                absmindeg  = [abs(x) for x in mindeg]
+                x =absmindeg.index(min(absmindeg))
+                #x = 0
+                self.rotation = mindeg[x]+self.rotation
+                self.stuck += 1
+                move_x = np.cos(self.rotation/180*np.pi)
+                move_y = np.sin(self.rotation/180*np.pi)
+
+                if self.stuck >20:
+                    x = np.random.randint(len(i))
+                    move_x = (i[x]-1)
+                    move_y = (j[x]-1)
             # self.rotation = np.random.random()*360
             # move_x = np.cos(self.rotation/180*np.pi)#*self.geschwindigkeit
             # move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
-        
+        else:
+            self.stuck = 0
+
+
+
         if self.pos[1] + move_y > self.umwelt.hoehe-20 or self.pos[1]+move_y < 0:
             move_y = move_y * -1
 
         if self.pos[0] + move_x > self.umwelt.breite-20 or self.pos[0]+move_x < 0:
             move_x = move_x * -1
+        move_x = min(1,(max(move_x,-1)))
+        move_y = min(1,(max(move_y,-1)))
         self.pos = (self.pos[0]+move_x, self.pos[1]+move_y)
         pos_i = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
         
@@ -207,6 +246,8 @@ class ant():
             
         elif move_y !=0:
             self.rotation = np.sign(move_y)*180
+        else:
+            self.rotation =np.random.randint(360)
             
             pass
 
