@@ -1,5 +1,5 @@
 import numpy as np
-import random
+#import random
 
 def mask_array(arr,rot):
     pass
@@ -36,6 +36,7 @@ class ant():
         self.sensor_weite = 4 #"sichtweise" in pixel
         self.trage_obj = None
         self.count_event=0
+        self.collsion = 0
         
     def sensor(self,phero):
         sensor_fov={-90:1,-60:3,-30:7,0:10,30:7,60:3,90:1}
@@ -154,7 +155,9 @@ class ant():
         move_y = np.sin(self.rotation/180*np.pi)#*self.geschwindigkeit
         #pos_i_neu = (int(self.pos[0]+move_x),int( self.pos[1]+move_y))
         #colmap_ 0 ist wand 1 ist frei
-        
+        ##
+        ## Kollision
+        ##
         i,j = np.where(col_map == 0)
 
 
@@ -189,9 +192,9 @@ class ant():
         #pheromone
 
         if self.count_event%6 == 0:
-            change_val = 255-255*f_logistic(self.count_event/200-3,1,1,0.5)
+            #change_val = 255-255*f_logistic(self.count_event/200-3,1,1,0.5)
             #change_val = 255
-            change_val = 255-int(self.count_event/3+1)
+            change_val = 255-int(self.count_event/20+1)
             if not self.trage_obj: # suche futter
                 #change_val = min(255,50+255-255*f_logistic(self.count_event/100-3,1,1,0.5))
                 self.colony.change_phero(0,change_val,pos_i)
