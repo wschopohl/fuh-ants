@@ -1,14 +1,11 @@
 from random import randint
 import math
-import numpy as np
 
 from Pheromone import Pheromone, Type
-from CollisionPygame import CollisionPygame
 
 import Config
 
 class Ant:
-    collision = CollisionPygame()
 
     def __init__(self, nest):
         self.nest = nest
@@ -97,8 +94,8 @@ class Ant:
                 if dfood <= Config.AntSenseRadius:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
         
-        near_pheromones = Ant.collision.getNearby(self, self.nest.world.pheromones, Config.AntSenseRadius, pheromone_type.value)
-        
+        near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
+
         return self.calculate_pheromone_vector(near_pheromones)
 
     def calculate_pheromone_vector(self, pheromones):
