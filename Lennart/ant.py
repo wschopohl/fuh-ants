@@ -191,6 +191,7 @@ class Ant(pg.sprite.Sprite):
                 steerStr = 5
                 self.mode = AntMode.TO_FOOD
                 self.timer = 0
+                self.colony.add_food()
             elif mid_result > max(left_result, right_result) and mid_isID: #and mid_result[:2] == (0,0):
                 self.desireDir += pg.Vector2(1,0).rotate(self.ang).normalize()
                 wandrStr = .1
@@ -407,8 +408,8 @@ class Food(pg.sprite.Sprite):
 
 
 class Vec2():
-	def __init__(self, x=0, y=0):
-		self.x = x
-		self.y = y
-	def vint(self):
-		return (int(self.x), int(self.y))
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+    def vint(self):
+        return (int(self.x), int(self.y))
