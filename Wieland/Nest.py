@@ -37,3 +37,7 @@ class Nest:
             if self.spawned >= self.max_ants:
                 self.running = False
             time.sleep(1/self.spawn_rate)
+
+    def kill(self, ant):
+        self.world.remove(ant)
+        self.spawned -= 1

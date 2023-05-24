@@ -23,7 +23,7 @@ def main():
     # world.add(FoodCluster(position = (1100,100), amount=1000))
 
     world.add(Map("assets/map_ugly.png"))
-    world.add(Nest(position = (100,420), spawn_rate=50, max_ants = 1))
+    world.add(Nest(position = (100,420), spawn_rate=50, max_ants = 500))
     world.add(FoodCluster(position = (1000,420), amount=1000))
 
     world.run()

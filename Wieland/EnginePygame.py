@@ -84,6 +84,8 @@ class EnginePygame:
 class PGAnt(pygame.sprite.Sprite):
     original_image = None
     original_image_food = None
+    original_mask = None
+    middle_offset = None
 
     @classmethod
     def loadImages(cls):
@@ -91,13 +93,19 @@ class PGAnt(pygame.sprite.Sprite):
         PGAnt.original_image = pygame.image.load(Config.AntImageFile).convert_alpha()
         PGAnt.original_image_food = PGAnt.original_image.copy()
         pygame.draw.circle(PGAnt.original_image_food, Colors.FoodCluster, Config.AntFoodPosition, Config.AntFoodSize)
+        image_rect = PGAnt.original_image.get_rect()
+        PGAnt.middle_offset = pygame.Vector2(image_rect.width / 2 - Config.AntMiddlePosition[0], image_rect.height / 2 - Config.AntMiddlePosition[1])
+        # mask_width = PGAnt.original_image.get_rect().width
+        # mask_height = PGAnt.original_image.get_rect().height + Config.AntWallViewDistance
+        # PGAnt.original_mask = pygame.mask.Mask((mask_width, mask_height))
+        PGAnt.original_mask = pygame.surface.Surface((image_rect.w, image_rect.h), pygame.SRCALPHA)
+        PGAnt.original_mask.fill((255,255,255,255))
     
     def __init__(self, ant):
         pygame.sprite.Sprite.__init__(self)
         self.ant = ant
         self.object = ant
         self.radius = Config.AntSenseRadius
-        self.mask = pygame.mask.Mask((0,0))
         ant.setSprite(self)
         PGAnt.loadImages()
         self.updateImage()
@@ -105,33 +113,33 @@ class PGAnt(pygame.sprite.Sprite):
     def update(self):
         renderMutex.acquire()
         try:
-            self.rect.x = self.ant.position[0] - self.rect.width / 2
-            self.rect.y = self.ant.position[1] - self.rect.height / 2
+            self.rect.x = self.ant.position[0] - self.rect.width / 2 + self.middle.x
+            self.rect.y = self.ant.position[1] - self.rect.height / 2 - self.middle.y
         except AttributeError:
             pass
         renderMutex.release()
 
     def updateImage(self):
         renderMutex.acquire()
-        deg = (self.ant.direction) -90
+        deg = (self.ant.direction)
         self.image = PGAnt.original_image
         if self.ant.carry_food > 0:
             self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
         else:    
             self.image = pygame.transform.rotate(PGAnt.original_image, deg)
-        self.mask = pygame.mask.from_surface(self.image)
+        self.mask = pygame.mask.from_surface(pygame.transform.rotate(PGAnt.original_mask, deg))
+        # self.mask = pygame.transform.rotate(PGAnt.original_mask, deg)
         self.rect = self.image.get_rect()
+        self.middle = PGAnt.middle_offset.rotate(self.ant.direction)
         renderMutex.release()
 
     def collision(self, map):
+        self.update()
         try:
-            mask = self.mask.overlap_mask(map.mask, (-(self.ant.position[0] - self.rect.width / 2), -(self.ant.position[1] - self.rect.height / 2)))
-            # self.image = mask.to_surface()
-            if mask.count() == 0: return False
-            return True
+            answer = self.mask.overlap(map.mask, (-self.rect.x, -self.rect.y)) != None
+            return answer
         except AttributeError:
-            pass
-        return False
+            return False
 
 
 class PGNest(pygame.sprite.Sprite):

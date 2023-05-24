@@ -6,6 +6,7 @@ from Pheromone import Pheromone, Type
 import Config
 
 class Ant:
+    killCounter = 0
 
     def __init__(self, nest):
         self.nest = nest
@@ -16,7 +17,7 @@ class Ant:
         self.step = 0
         self.pheromone_intensity = 1
         self.sprite = None
-        self.wallangle = 10
+        self.wallSearchStart = randint(0,1)
         self.calculateMoveVectors()
 
     def setSprite(self, sprite):
@@ -25,25 +26,9 @@ class Ant:
     def move(self):
         self.pheromone_intensity -= (Config.PheromoneDecay / 5)
         self.step += 1
-        oldpos = self.position
-        loops = 0
-        while True:
-            loops += 1
-            self.position = (oldpos[0] + self.dx, oldpos[1] + self.dy)
-            if self.checkCollision() == False: break
-            # if loops > 10: angle = randint(0,360)
-            # if loops > 100: break
-            # print(self.position, self.direction)
-            if loops % 1000 == 0: print(loops)
-            self.direction = (self.direction + self.wallangle) % 360
-            self.sprite.updateImage()
-            self.calculateMoveVectors()
-        # self.randomChangeDirection()
+        self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
+        self.randomChangeDirection()
         self.dropPheromone()
-
-    def checkCollision(self):
-        if self.sprite == None: return
-        return self.sprite.collision(self.nest.world.map.sprite)
 
     def turnaround(self):
         self.direction = (self.direction + 180) % 360
@@ -65,7 +50,7 @@ class Ant:
         # self.turnaround()
         self.position = self.nest.position
         self.direction = randint(0,360)
-        self.sprite.updateImage()
+        self.calculateMoveVectors()
 
     def dropPheromone(self):
         if self.step % Config.AntPheromoneDrop != 0: return
@@ -79,28 +64,42 @@ class Ant:
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
-        oldangle = self.direction
-        newangle = oldangle
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            newangle = (sense_angle + da * 0.5) % 360
+            self.direction = (sense_angle + da * 0.5) % 360
         else:   
-            newangle = (self.direction + da) % 360
-
-        while True:
-            self.direction = newangle
-            if self.sprite != None:
-                self.sprite.updateImage()
-            if self.checkCollision() == False: break
-            newangle += self.wallangle
-
-        self.wallangle = newangle - oldangle
+            self.direction = (self.direction + da) % 360
 
         self.calculateMoveVectors()
+        if self.sprite != None: self.sprite.updateImage()
 
     def calculateMoveVectors(self):
+        olddirection = self.direction
+        search_angle = 0
+        search_invert = (1 if self.wallSearchStart == 0 else -1)
+        iteration = 0
+        while True:
+            if self.sprite == None: break
+            self.sprite.updateImage()
+            if self.sprite.collision(self.nest.world.map.sprite) == False: break
+            if iteration % 2 == 0: 
+                search_angle += Config.AntWallSearchAngle
+                self.direction = olddirection + (search_angle * search_invert)
+            else:
+                self.direction = olddirection + (search_angle * search_invert * -1)
+            iteration += 1
+            if iteration > 24: 
+                self.suicide()
+                return
+
         self.dx = Config.AntMoveDistance * math.cos(math.radians(self.direction))
         self.dy = -Config.AntMoveDistance * math.sin(math.radians(self.direction))
+
+    def suicide(self):
+        Ant.killCounter += 1
+        print("Stuck and killed", Ant.killCounter)
+        self.nest.kill(self)
+
 
     def sense(self):
         pheromone_type = Type.FOOD if self.carry_food == 0 else Type.HOME
