@@ -67,7 +67,7 @@ class Ant:
         
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 0.1) % 360
+            self.direction = (sense_angle + da * 0.2) % 360
         else:   
             self.direction = (self.direction + da) % 360
 
@@ -139,7 +139,7 @@ class Ant:
                 angle_delta = 180 - abs(abs(angle - self.direction) - 180); 
                 if angle_delta <= Config.AntFieldOfView:
                     angle_factor = (1 - angle_delta / (Config.AntFieldOfView))
-                    length_factor = (1 - length / Config.AntSenseRadius)
+                    length_factor = 1 #(1 - length / Config.AntSenseRadius) # distance factor not so important
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
         

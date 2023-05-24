@@ -24,8 +24,13 @@ class PheromoneMap:
         self.map[pheromone.type][y][x] = None
 
     def adjustPheromone(self, existing_pheromone, new_pheromone):
-        nx = (existing_pheromone.position[0] + new_pheromone.position[0]) / 2
-        ny = (existing_pheromone.position[1] + new_pheromone.position[1]) / 2
+        ifactor = (new_pheromone.intensity / (new_pheromone.intensity + existing_pheromone.intensity))
+        dx = (new_pheromone.position[0] - existing_pheromone.position[0]) * ifactor
+        dy = (new_pheromone.position[1] - existing_pheromone.position[1]) * ifactor
+        
+        nx = (existing_pheromone.position[0] + dx)
+        ny = (existing_pheromone.position[1] + dy)
+        
         existing_pheromone.intensity += new_pheromone.intensity
         existing_pheromone.represents += 1
         existing_pheromone.position = (nx, ny)

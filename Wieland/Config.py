@@ -3,8 +3,8 @@ AntAngleVariation = 20
 AntAngleStep = 10
 AntSleepTime = 0.001
 AntPheromoneDrop = 5
-AntSenseRadius = 100
-AntFieldOfView = 80
+AntSenseRadius = 120
+AntFieldOfView = 70
 AntWallViewDistance = AntMoveDistance + AntAngleStep + 5
 AntWallSearchAngle = 15
 
@@ -21,5 +21,5 @@ NestSize = 20
 FoodSize = 0.03
 
 PheromoneSize = 2
-PheromoneDecay = 0.0002
-PheromoneMapTileSize = 10
+PheromoneDecay = 0.001
+PheromoneMapTileSize = 15

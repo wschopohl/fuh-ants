@@ -208,7 +208,7 @@ class PGPheromone(pygame.sprite.Sprite):
         self.update()
 
     def update(self):
-        intensity = (self.pheromone.intensity / 10 * 200) + 55
+        intensity = (self.pheromone.intensity / 10 * 225) + 20
         # size = (5 / 10) * self.pheromone.intensity
         # self.image = pygame.transform.scale(PGPheromone.pheromone_images[self.pheromone.type], (size, size))
         self.rect.x = self.pheromone.position[0] - self.rect.width / 2
