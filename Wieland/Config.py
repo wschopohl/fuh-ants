@@ -4,7 +4,7 @@ AntAngleStep = 10
 AntSleepTime = 0.001
 AntPheromoneDrop = 5
 AntSenseRadius = 100
-AntFieldOfView = 90
+AntFieldOfView = 80
 AntWallViewDistance = AntMoveDistance + AntAngleStep + 5
 AntWallSearchAngle = 15
 

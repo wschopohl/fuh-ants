@@ -56,6 +56,8 @@ class EnginePygame:
                 if event.type == pygame.QUIT:
                     running = False
 
+            # self.world.update()
+            
             self.pgants.update()
             if render_step % 5 == 0: self.pgpheromones.update()
             

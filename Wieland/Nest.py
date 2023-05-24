@@ -30,12 +30,18 @@ class Nest:
         self.running = False
         self.loopthread.join()
 
+    def update(self):
+        if self.spawned < self.max_ants: 
+            self.world.add(Ant(self))
+            self.spawned += 1
+
     def loop(self):
         while self.running:
-            if self.spawned < self.max_ants: self.world.add(Ant(self))
-            self.spawned += 1
+            if self.spawned < self.max_ants: 
+                self.world.add(Ant(self))
+                self.spawned += 1
             time.sleep(1/self.spawn_rate)
 
     def kill(self, ant):
-        self.world.remove(ant)
         self.spawned -= 1
+        self.world.remove(ant)

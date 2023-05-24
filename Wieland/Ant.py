@@ -60,14 +60,14 @@ class Ant:
 
     def randomChangeDirection(self):
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
-            self.direction = fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)
+            self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
-        if 528 <= self.position[0]<= 631 and 486 <= self.position[1] <= 573: print(sense_angle) 
+        
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 0) % 360
+            self.direction = (sense_angle + da * 0.1) % 360
         else:   
             self.direction = (self.direction + da) % 360
 
@@ -82,12 +82,13 @@ class Ant:
         while True:
             if self.sprite == None: break
             self.sprite.updateImage()
+            if self.nest.world.map == None: break
             if self.sprite.collision(self.nest.world.map.sprite) == False: break
             if iteration % 2 == 0: 
                 search_angle += Config.AntWallSearchAngle
-                self.direction = olddirection + (search_angle * search_invert)
+                self.direction = (olddirection + (search_angle * search_invert)) % 360
             else:
-                self.direction = olddirection + (search_angle * search_invert * -1)
+                self.direction = (olddirection + (search_angle * search_invert * -1)) % 360
             iteration += 1
             if iteration > 24: 
                 self.suicide()
@@ -98,7 +99,6 @@ class Ant:
 
     def suicide(self):
         Ant.killCounter += 1
-        print("Stuck and killed", Ant.killCounter)
         self.nest.kill(self)
 
 
@@ -121,7 +121,11 @@ class Ant:
         
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
-        return self.calculate_pheromone_vector(near_pheromones)
+        angle = self.calculate_pheromone_vector(near_pheromones)
+        # if 528 <= self.position[0]<= 631 and 486 <= self.position[1] <= 573:
+        #     if len(near_pheromones) > 0:
+        #         print(len(near_pheromones), angle) 
+        return angle
 
     def calculate_pheromone_vector(self, pheromones):
         if len(pheromones) == 0: return None
@@ -139,6 +143,7 @@ class Ant:
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
         
+
         if vector['x'] == 0 == vector['y']: return None
         #length = math.sqrt(vector['x']*vector['x'] + vector['y']*vector['y']) / 10
         # print(vector['x'] / length)

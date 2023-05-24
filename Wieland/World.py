@@ -62,6 +62,14 @@ class World:
         ThreadHelper.start("collisions", self.collisionLoop)
         ThreadHelper.start("pheromones", self.pheromoneLoop)
 
+    def update(self):
+        for nest in self.nests: nest.update()
+        for ant in self.ants: ant.move()
+
+        self.checkFoodClusterCollision()
+        self.checkNestCollision()
+        for pheromone in self.pheromones: pheromone.decay(Config.PheromoneDecay)
+
     def stop(self):
         for nest in self.nests:
             nest.stop()
