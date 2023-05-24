@@ -7,8 +7,6 @@ from Environment import Environment
 from Screen import Screen
 screen = Screen(60, 800, 600)
 
-from Ant import Ant
-from Pheromone import Pheromone
 from Colors import COLORS
 from Colony import Colony
 
@@ -26,7 +24,8 @@ def main():
 
     environment = Environment()
     colony = Colony (screen, 10)
-    
+
+    screen_rect = screen.window.get_rect
     
     
 
@@ -43,7 +42,7 @@ def main():
         last_update_time = current_time
 
         colony.update(elapsed)
-
+            
 
         # Generate Pheromone-Trails
         screen.fill(COLORS.white())

@@ -24,7 +24,7 @@ class Ant(pygame.sprite.Sprite):
 
         self.maxSpeed = maxSpeed
         self.colony = colony
-        self.angle = 0
+        self.angle = 0.0
         self.vel_x = 0
         self.vel_y = 0
 
@@ -41,7 +41,7 @@ class Ant(pygame.sprite.Sprite):
         ant_img = [ROTATED_ANT_IMAGE, ANT_IMAGE_RECT]
         return ant_img
     
-    # Trigonometry
+    # Trigonometrycalc
     def calc(self):
         # Calculate random angles for movement
         self.angle += random.uniform(-0.25, 0.25)
