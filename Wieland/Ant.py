@@ -24,7 +24,7 @@ class Ant:
         self.sprite = sprite
 
     def move(self):
-        self.pheromone_intensity -= (Config.PheromoneDecay / 5)
+        self.pheromone_intensity -= (Config.PheromoneDecay / 2)
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         self.randomChangeDirection()
@@ -64,9 +64,10 @@ class Ant:
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
+        if 528 <= self.position[0]<= 631 and 486 <= self.position[1] <= 573: print(sense_angle) 
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 0.5) % 360
+            self.direction = (sense_angle + da * 0) % 360
         else:   
             self.direction = (self.direction + da) % 360
 
@@ -133,12 +134,15 @@ class Ant:
             if length <= Config.AntSenseRadius:
                 angle = fast_angle(dx, dy)
                 if angle != None and abs(angle - self.direction) <= Config.AntFieldOfView:
-                    angle_factor = (1 - abs(angle - self.direction) / Config.AntFieldOfView)
-                    length_factor = 1 # (1 - length / Config.AntSenseRadius)
+                    angle_factor = (1 - abs(angle - self.direction) / (Config.AntFieldOfView))
+                    length_factor = (1 - length / Config.AntSenseRadius)
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
         
         if vector['x'] == 0 == vector['y']: return None
+        #length = math.sqrt(vector['x']*vector['x'] + vector['y']*vector['y']) / 10
+        # print(vector['x'] / length)
+        # self.nest.world.render_engine.drawVector(self.position, (self.position[0] + vector['x'] / length, self.position[1] + vector['y'] / length))
         return fast_angle(vector['x'], vector['y'])
 
 

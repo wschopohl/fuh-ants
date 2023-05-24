@@ -22,9 +22,15 @@ def main():
     # world.add(FoodCluster(position = (100,700), amount=1000))
     # world.add(FoodCluster(position = (1100,100), amount=1000))
 
-    world.add(Map("assets/map_ugly.png"))
-    world.add(Nest(position = (100,420), spawn_rate=50, max_ants = 500))
-    world.add(FoodCluster(position = (1000,420), amount=1000))
+    # world.add(Map("assets/map_ugly.png"))
+    # world.add(Nest(position = (100,420), spawn_rate=50, max_ants = 500))
+    # world.add(FoodCluster(position = (1000,420), amount=1000))
+
+    world.add(Map("assets/map_ugly2.png"))
+    world.add(Nest(position = (226,216), spawn_rate=50, max_ants = 100))
+    # world.add(FoodCluster(position = (648,656), amount=1000))
+    world.add(FoodCluster(position = (1056,662), amount=1000))
+    #world.add(FoodCluster(position = (1006,148), amount=1000))
 
     world.run()
     engine.startRenderLoop()  # sync call, execution waits here

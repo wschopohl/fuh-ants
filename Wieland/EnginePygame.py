@@ -28,6 +28,8 @@ class EnginePygame:
         self.pgfoodclusters = pygame.sprite.Group()
         self.pgpheromones = pygame.sprite.Group()
         self.pgmap = None
+        self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
 
     def add(self, object):
         if type(object) is Ant:
@@ -47,18 +49,21 @@ class EnginePygame:
         
     def startRenderLoop(self):
         running = True
+        render_step = 0
         while running:
+            render_step += 1
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
             self.pgants.update()
-            self.pgpheromones.update()
+            if render_step % 5 == 0: self.pgpheromones.update()
             
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
             if self.pgmap != None: self.pgmap.draw(self.screen)
+            # self.screen.blit(self.debug_surface, (0,0))
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
             self.pgpheromones.draw(self.screen)
@@ -67,6 +72,7 @@ class EnginePygame:
             renderMutex.release()
             
             pygame.display.flip()
+            # self.debug_surface.fill((255,255,255,0))
             time.sleep(Config.AntSleepTime)
 
         self.world.stop()
@@ -79,6 +85,13 @@ class EnginePygame:
         text += " Pheromones: " + str(len(self.pgpheromones))
         text_surface = self.font.render(text, True, Colors.InfoText)
         self.screen.blit(text_surface, (20, 20))
+
+    def drawVector(self, start, end):
+        pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
+        pygame.draw.circle(self.draw_surface, (0,255,0,255), start, 2)
+        self.draw_surface.set_alpha(200)
+        self.debug_surface.blit(self.draw_surface, (0,0))
+        self.draw_surface.blit(self.debug_surface, (0,0))
 
 
 class PGAnt(pygame.sprite.Sprite):
@@ -193,7 +206,9 @@ class PGPheromone(pygame.sprite.Sprite):
         self.update()
 
     def update(self):
-        intensity = (self.pheromone.intensity * 255)
+        intensity = (self.pheromone.intensity / 10 * 200) + 55
+        # size = (5 / 10) * self.pheromone.intensity
+        # self.image = pygame.transform.scale(PGPheromone.pheromone_images[self.pheromone.type], (size, size))
         self.rect.x = self.pheromone.position[0] - self.rect.width / 2
         self.rect.y = self.pheromone.position[1] - self.rect.height / 2
         # print(intensity)
