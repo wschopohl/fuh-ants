@@ -122,9 +122,7 @@ class Ant:
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
         angle = self.calculate_pheromone_vector(near_pheromones)
-        # if 528 <= self.position[0]<= 631 and 486 <= self.position[1] <= 573:
-        #     if len(near_pheromones) > 0:
-        #         print(len(near_pheromones), angle) 
+
         return angle
 
     def calculate_pheromone_vector(self, pheromones):
@@ -137,17 +135,16 @@ class Ant:
             length = math.sqrt(dx*dx + dy*dy)
             if length <= Config.AntSenseRadius:
                 angle = fast_angle(dx, dy)
-                if angle != None and abs(angle - self.direction) <= Config.AntFieldOfView:
-                    angle_factor = (1 - abs(angle - self.direction) / (Config.AntFieldOfView))
+                if angle == None: continue
+                angle_delta = 180 - abs(abs(angle - self.direction) - 180); 
+                if angle_delta <= Config.AntFieldOfView:
+                    angle_factor = (1 - angle_delta / (Config.AntFieldOfView))
                     length_factor = (1 - length / Config.AntSenseRadius)
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
         
 
         if vector['x'] == 0 == vector['y']: return None
-        #length = math.sqrt(vector['x']*vector['x'] + vector['y']*vector['y']) / 10
-        # print(vector['x'] / length)
-        # self.nest.world.render_engine.drawVector(self.position, (self.position[0] + vector['x'] / length, self.position[1] + vector['y'] / length))
         return fast_angle(vector['x'], vector['y'])
 
 

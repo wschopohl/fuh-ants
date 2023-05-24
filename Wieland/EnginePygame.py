@@ -213,7 +213,6 @@ class PGPheromone(pygame.sprite.Sprite):
         # self.image = pygame.transform.scale(PGPheromone.pheromone_images[self.pheromone.type], (size, size))
         self.rect.x = self.pheromone.position[0] - self.rect.width / 2
         self.rect.y = self.pheromone.position[1] - self.rect.height / 2
-        # print(intensity)
         self.image.set_alpha(intensity)
 
     def remove(self):
