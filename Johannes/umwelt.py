@@ -44,7 +44,11 @@ class colony():
         val = min(max(0,val),255)        
         self.phero[ind][pos[0]-1:pos[0]+1,pos[1]-1:pos[1]+1] =max( self.phero[ind][pos[0],pos[1]],val)        
 class food:
+<<<<<<< HEAD
     def __init__(self,pos=(700,360),amount = 100) -> None:
+=======
+    def __init__(self,pos=(400,300),amount = 100) -> None:
+>>>>>>> 382df73dc7b95d5faea1b27278624d8499dd5145
         self.pos = pos
         self.amount = amount
         
@@ -54,9 +58,9 @@ if __name__ == "__main__":
     Sim.add_colony()
 
 
-    for i in range(4000):
-        for colony in Sim.colonys:
-            if len(colony.ants)<100:
-                    colony.add_ant()
-        Sim.update()
-    print(Sim.colonys[0].food)
+ #   for i in range(1):
+  #      for colony in Sim.colonys:
+   #         if len(colony.ants)<100:
+    #                colony.add_ant()
+     #   Sim.update()
+    #print(Sim.colonys[0].food)

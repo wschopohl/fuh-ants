@@ -100,7 +100,7 @@ while spielaktiv:
         #print(clock.get_fps(),len(Umwelt.ants))
     if ant_frame %15==0:
         for colony in Umwelt.colonys:
-            if len(colony.ants)<150:
+            if len(colony.ants)<15:
                 colony.add_ant()
             # else:
             #     if ant_frame %30==0:

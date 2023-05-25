@@ -1,14 +1,12 @@
 from random import randint
 import math
-import numpy as np
 
 from Pheromone import Pheromone, Type
-from CollisionPygame import CollisionPygame
 
 import Config
 
 class Ant:
-    collision = CollisionPygame()
+    killCounter = 0
 
     def __init__(self, nest):
         self.nest = nest
@@ -19,6 +17,7 @@ class Ant:
         self.step = 0
         self.pheromone_intensity = 1
         self.sprite = None
+        self.wallSearchStart = randint(0,1)
         self.calculateMoveVectors()
 
     def setSprite(self, sprite):
@@ -51,7 +50,7 @@ class Ant:
         # self.turnaround()
         self.position = self.nest.position
         self.direction = randint(0,360)
-        self.sprite.updateImage()
+        self.calculateMoveVectors()
 
     def dropPheromone(self):
         if self.step % Config.AntPheromoneDrop != 0: return
@@ -61,24 +60,47 @@ class Ant:
 
     def randomChangeDirection(self):
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
-            self.direction = fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)
+            self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
 
         sense_angle = self.sense()
+        
         da = randint(-Config.AntAngleVariation, Config.AntAngleVariation)
         if sense_angle != None:
-            self.direction = (sense_angle + da * 0.5) % 360
+            self.direction = (sense_angle + da * 0.2) % 360
         else:   
             self.direction = (self.direction + da) % 360
 
-        if self.sprite != None:
-            self.sprite.updateImage()
-
         self.calculateMoveVectors()
+        if self.sprite != None: self.sprite.updateImage()
 
     def calculateMoveVectors(self):
+        olddirection = self.direction
+        search_angle = 0
+        search_invert = (1 if self.wallSearchStart == 0 else -1)
+        iteration = 0
+        while True:
+            if self.sprite == None: break
+            self.sprite.updateImage()
+            if self.nest.world.map == None: break
+            if self.sprite.collision(self.nest.world.map.sprite) == False: break
+            if iteration % 2 == 0: 
+                search_angle += Config.AntWallSearchAngle
+                self.direction = (olddirection + (search_angle * search_invert)) % 360
+            else:
+                self.direction = (olddirection + (search_angle * search_invert * -1)) % 360
+            iteration += 1
+            if iteration > 24: 
+                self.suicide()
+                return
+
         self.dx = Config.AntMoveDistance * math.cos(math.radians(self.direction))
         self.dy = -Config.AntMoveDistance * math.sin(math.radians(self.direction))
+
+    def suicide(self):
+        Ant.killCounter += 1
+        self.nest.kill(self)
+
 
     def sense(self):
         pheromone_type = Type.FOOD if self.carry_food == 0 else Type.HOME
@@ -97,9 +119,11 @@ class Ant:
                 if dfood <= Config.AntSenseRadius:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
         
-        near_pheromones = Ant.collision.getNearby(self, self.nest.world.pheromones, Config.AntSenseRadius, pheromone_type.value)
-        
-        return self.calculate_pheromone_vector(near_pheromones)
+        near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
+
+        angle = self.calculate_pheromone_vector(near_pheromones)
+
+        return angle
 
     def calculate_pheromone_vector(self, pheromones):
         if len(pheromones) == 0: return None
@@ -111,12 +135,15 @@ class Ant:
             length = math.sqrt(dx*dx + dy*dy)
             if length <= Config.AntSenseRadius:
                 angle = fast_angle(dx, dy)
-                if angle != None and abs(angle - self.direction) <= Config.AntFieldOfView:
-                    angle_factor = (1 - abs(angle - self.direction) / Config.AntFieldOfView)
-                    length_factor = 1 # (1 - length / Config.AntSenseRadius)
+                if angle == None: continue
+                angle_delta = 180 - abs(abs(angle - self.direction) - 180); 
+                if angle_delta <= Config.AntFieldOfView:
+                    angle_factor = (1 - angle_delta / (Config.AntFieldOfView))
+                    length_factor = 1 #(1 - length / Config.AntSenseRadius) # distance factor not so important
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
         
+
         if vector['x'] == 0 == vector['y']: return None
         return fast_angle(vector['x'], vector['y'])
 

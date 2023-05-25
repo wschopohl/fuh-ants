@@ -1,19 +1,63 @@
-DEBUG = 0
+from enum import IntEnum
 
-NBDIRS = 8
-DIRS = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]
-STRDIRS = ["NW", "N", "NE", "E", "SE", "S", "SW", "W"]
 
-### World & Colony Parameters ###
+WINDOW_WIDTH = 1200
+WINDOW_HEIGHT = 900
+CELL_SIZE = 5
 
-WIDTH = 200
-HEIGHT = 150
-NBANTS = 50
-NTURNS = 0
+# FPS_LIMIT = 10
+# FPS_LIMIT = 40
+FPS_LIMIT = 60
+# FPS_LIMIT = 100
 
-### Ant Parameters ###
+# PH_MAX_STRENGTH = 10
+# ANT_TURN_INTERVAL = FPS_LIMIT // 10
+# PH_DROP_INTERVAL = FPS_LIMIT // 10
+ANT_TURN_INTERVAL = FPS_LIMIT // 60
+# PH_DROP_INTERVAL = FPS_LIMIT // 60
+PH_DECAY_INTERVAL = FPS_LIMIT // 4
+PH_IMG_UPDATE_INTERVAL = FPS_LIMIT // 12
+# ANT_COLLISION_CHECK_INTERVAL = FPS_LIMIT // 10
 
-PHEROMONE_DROP = 450
-FOOD_CAPACITY = 1
-MAX_PHEROMONE = 1200
-DECAY_PHEROMONE = 2
+PH_MAX_STRENGTH = 250
+PH_DECAY_AMOUNT = 1
+# PH_ADD_AMOUNT = 5
+PH_ADD_AMOUNT = 25
+
+BG_COLOR = 'black'
+# BG_COLOR = 'grey'
+PH_TYPES = ['food', 'home']
+PH_COLORS = ['green', 'blue']
+
+# MAX_ANTS_PER_COLONY = 1
+# MAX_ANTS_PER_COLONY = 5
+# MAX_ANTS_PER_COLONY = 20
+# MAX_ANTS_PER_COLONY = 50
+# MAX_ANTS_PER_COLONY = 100
+MAX_ANTS_PER_COLONY = 200
+# MAX_ANTS_PER_COLONY = 500
+# MAX_ANTS_PER_COLONY = 1000
+
+# SHOW_PHEROMONE_CHECK_MASKS = True
+SHOW_PHEROMONE_CHECK_MASKS = False
+
+
+class AntMode(IntEnum):
+    TO_FOOD = 0
+    TO_HOME = 1
+
+
+class PheromoneType(IntEnum):
+    TO_FOOD = 0
+    TO_HOME = 1
+
+
+class CellType(IntEnum):
+    EMPTY = 0
+    WALL = 1
+    FOOD = 2
+
+
+# class AntMode(IntEnum):
+#     TO_HOME = 0
+#     TO_FOOD = 1
