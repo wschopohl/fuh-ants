@@ -25,8 +25,8 @@ pygame.init()
 
 #BG/map
 
-bg_map = pygame.image.load("Johannes/map_01.png")
-ameise = pygame.image.load("Johannes/walking_ant.png")
+bg_map = pygame.image.load("map_01.png")
+ameise = pygame.image.load("walking_ant.png")
 
 ameise_frame_h = 248
 ameise_frame_b = 202

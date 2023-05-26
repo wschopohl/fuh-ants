@@ -44,11 +44,9 @@ class colony():
         val = min(max(0,val),255)        
         self.phero[ind][pos[0]-1:pos[0]+1,pos[1]-1:pos[1]+1] =max( self.phero[ind][pos[0],pos[1]],val)        
 class food:
-<<<<<<< HEAD
     def __init__(self,pos=(700,360),amount = 100) -> None:
-=======
-    def __init__(self,pos=(400,300),amount = 100) -> None:
->>>>>>> 382df73dc7b95d5faea1b27278624d8499dd5145
+#   def __init__(self,pos=(400,300),amount = 100) -> None:
+
         self.pos = pos
         self.amount = amount
         
