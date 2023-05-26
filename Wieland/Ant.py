@@ -99,6 +99,7 @@ class Ant:
 
     def suicide(self):
         Ant.killCounter += 1
+        print("Ants killed:", Ant.killCounter)
         self.nest.kill(self)
 
 
