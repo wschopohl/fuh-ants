@@ -116,7 +116,7 @@ class PGAnt(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.ant = ant
         self.object = ant
-        self.radius = Config.AntSenseRadius
+        self.radius = 2
         ant.setSprite(self)
         PGAnt.loadImages()
         self.updateImage()
@@ -157,8 +157,7 @@ class PGNest(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.nest = nest
         nest.setSprite(self)
-        self.image = pygame.Surface((Config.NestSize*2, Config.NestSize*2), pygame.SRCALPHA)   # per-pixel alpha
-        pygame.draw.circle(self.image, Colors.Nest, (Config.NestSize, Config.NestSize), Config.NestSize)
+        self.image = pygame.image.load(Config.NestImageFile).convert_alpha()
         self.rect = self.image.get_rect()
         self.update()
     
@@ -178,6 +177,7 @@ class PGFoodCluster(pygame.sprite.Sprite):
         if self.foodcluster.amount <= 0: self.kill()
         self.image = pygame.Surface((self.foodcluster.size()*2, self.foodcluster.size()*2), pygame.SRCALPHA)   # per-pixel alpha
         pygame.draw.circle(self.image, Colors.FoodCluster, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())
+        self.radius = self.foodcluster.size() # little hack because of oversized ant masks for view
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
         self.rect.y = self.foodcluster.position[1] - self.rect.height / 2
