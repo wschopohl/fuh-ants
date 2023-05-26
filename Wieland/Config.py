@@ -11,10 +11,12 @@ AntWallSearchAngle = 15
 
 
 # graphical configs
-AntImageFile = "assets/ant_small_view_ray.png"
+NestImageFile = "assets/nest.png"
+AntImageFile = "assets/ant_small.png"
+AntViewMaskFile = "assets/ant_small_view_mask.png"
 #AntFoodPosition = (10,10)
-AntFoodPosition = (7,5)
-AntMiddlePosition = (7,5)
+AntFoodPosition = (12,9)
+AntMiddlePosition = (9,9)
 AntFoodSize = 2.5
 
 NestSize = 20
@@ -22,4 +24,5 @@ FoodSize = 0.03
 
 PheromoneSize = 2
 PheromoneDecay = 0.001
+PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15

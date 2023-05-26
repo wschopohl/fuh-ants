@@ -24,7 +24,7 @@ class Ant:
         self.sprite = sprite
 
     def move(self):
-        self.pheromone_intensity -= (Config.PheromoneDecay / 2)
+        self.pheromone_intensity -= (Config.PheromoneDecay * Config.PheromoneDistanceReduce)
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         self.randomChangeDirection()
@@ -99,6 +99,7 @@ class Ant:
 
     def suicide(self):
         Ant.killCounter += 1
+        print("Ants killed:", Ant.killCounter)
         self.nest.kill(self)
 
 

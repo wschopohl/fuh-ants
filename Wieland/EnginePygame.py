@@ -99,28 +99,24 @@ class EnginePygame:
 class PGAnt(pygame.sprite.Sprite):
     original_image = None
     original_image_food = None
-    original_mask = None
+    original_mask_image = None
     middle_offset = None
 
     @classmethod
     def loadImages(cls):
         if PGAnt.original_image != None: return
         PGAnt.original_image = pygame.image.load(Config.AntImageFile).convert_alpha()
+        PGAnt.original_mask_image = pygame.image.load(Config.AntViewMaskFile).convert_alpha()
         PGAnt.original_image_food = PGAnt.original_image.copy()
         pygame.draw.circle(PGAnt.original_image_food, Colors.FoodCluster, Config.AntFoodPosition, Config.AntFoodSize)
         image_rect = PGAnt.original_image.get_rect()
         PGAnt.middle_offset = pygame.Vector2(image_rect.width / 2 - Config.AntMiddlePosition[0], image_rect.height / 2 - Config.AntMiddlePosition[1])
-        # mask_width = PGAnt.original_image.get_rect().width
-        # mask_height = PGAnt.original_image.get_rect().height + Config.AntWallViewDistance
-        # PGAnt.original_mask = pygame.mask.Mask((mask_width, mask_height))
-        PGAnt.original_mask = pygame.surface.Surface((image_rect.w, image_rect.h), pygame.SRCALPHA)
-        PGAnt.original_mask.fill((255,255,255,255))
     
     def __init__(self, ant):
         pygame.sprite.Sprite.__init__(self)
         self.ant = ant
         self.object = ant
-        self.radius = Config.AntSenseRadius
+        self.radius = 2
         ant.setSprite(self)
         PGAnt.loadImages()
         self.updateImage()
@@ -142,8 +138,7 @@ class PGAnt(pygame.sprite.Sprite):
             self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
         else:    
             self.image = pygame.transform.rotate(PGAnt.original_image, deg)
-        self.mask = pygame.mask.from_surface(pygame.transform.rotate(PGAnt.original_mask, deg))
-        # self.mask = pygame.transform.rotate(PGAnt.original_mask, deg)
+        self.mask = pygame.mask.from_surface(pygame.transform.rotate(PGAnt.original_mask_image, deg))
         self.rect = self.image.get_rect()
         self.middle = PGAnt.middle_offset.rotate(self.ant.direction)
         renderMutex.release()
@@ -162,8 +157,7 @@ class PGNest(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.nest = nest
         nest.setSprite(self)
-        self.image = pygame.Surface((Config.NestSize*2, Config.NestSize*2), pygame.SRCALPHA)   # per-pixel alpha
-        pygame.draw.circle(self.image, Colors.Nest, (Config.NestSize, Config.NestSize), Config.NestSize)
+        self.image = pygame.image.load(Config.NestImageFile).convert_alpha()
         self.rect = self.image.get_rect()
         self.update()
     
@@ -183,6 +177,7 @@ class PGFoodCluster(pygame.sprite.Sprite):
         if self.foodcluster.amount <= 0: self.kill()
         self.image = pygame.Surface((self.foodcluster.size()*2, self.foodcluster.size()*2), pygame.SRCALPHA)   # per-pixel alpha
         pygame.draw.circle(self.image, Colors.FoodCluster, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())
+        self.radius = self.foodcluster.size() # little hack because of oversized ant masks for view
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
         self.rect.y = self.foodcluster.position[1] - self.rect.height / 2
