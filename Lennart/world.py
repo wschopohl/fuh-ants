@@ -1,165 +1,151 @@
 import pygame as pg
 import numpy as np
-import math
-import random
-import enum
 
 from constants import *
-# import pheromone_map
 import colony
-# from food import Food
-
-
-# img_food = None
 
 
 class World:
 
     def __init__(self, screen):
         self.screen = screen
-
-        self.img_food = pg.image.load('img/food.png').convert_alpha()
-        self.FONT = pg.freetype.SysFont('Arial', 18)
-
+        self.screen_size = screen.get_size()
         self.grid_size = (screen.get_rect().width // CELL_SIZE, screen.get_rect().height // CELL_SIZE)
-        self.cell_grid = np.zeros(self.grid_size, dtype=np.int16)
-        self.load_grid_from_src(pg.image.load('img/world02.png'))
-        self.cell_grid_list = self.cell_grid.tolist()
+        self.FONT = pg.freetype.SysFont('Arial', 18)
+        self.time = 0
 
+        # could probably just use python lists instead of sprite groups
         self.ants = pg.sprite.Group()
         self.colonies = pg.sprite.Group()
-        self.colonies.add(colony.Colony(self, pg.Vector2(600, 300), 0))
 
-        # self.food_map = np.zeros(self.screen.get_size(), dtype=bool)
-        # for food_spawn in food_spawns:
-        #     self.spawn_food(food_spawn[0], food_spawn[1])
+        self.cell_grid = self.load_grid_from_src(pg.image.load(WORLD_PATH))
+        # also store cell grid as list to allow for faster requests of single values
+        self.cell_grid_list = self.cell_grid.tolist()
 
-        self.surf = pg.Surface(self.screen.get_size())
-        self.surf.fill(BG_COLOR)
-        self.wall_coords = []
+        self.food_grid = np.zeros(self.grid_size, dtype=np.int16)
+        self.food_grid[np.where(self.cell_grid == CellType.FOOD)] = INIT_FOOD_PER_CELL
+        self.draw_food_img()
+        self.food_grid_changed = False
+
+        # draw the cell grid consisting empty cells and walls once at the beginning and save it
+        self.bg_img = pg.Surface(self.screen.get_size())
+        self.bg_img.fill(BG_COLOR)
         for x, y in np.transpose((self.cell_grid == CellType.WALL).nonzero()):
             draw_rect = (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            self.wall_coords.append((x, y))
-            pg.draw.rect(self.surf, (127, 127, 127), draw_rect)
-        for x, y in np.transpose((self.cell_grid == CellType.FOOD).nonzero()):
-            draw_rect = (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-            pg.draw.rect(self.surf, (0, 255, 0), draw_rect)
+            pg.draw.rect(self.bg_img, (127, 127, 127), draw_rect)
     
     def load_grid_from_src(self, grid_src):
+        '''Loads wall and food position information from an image into the world cell grid.
+        
+        The image size must be equal to self.grid_size. Walls must have the color (0, 0, 255) 
+        and food must have the color (0, 255, 0), all other colors will be turned into empty 
+        tiles.
+        '''
         src_array = pg.surfarray.array3d(grid_src)
-        # self.cell_grid[np.where(np.all(src_array == (0, 0, 0), axis=-1))] = CellType.EMPTY
-        self.cell_grid[np.where(np.all(src_array == (0, 0, 255), axis=-1))] = CellType.WALL
-        self.cell_grid[np.where(np.all(src_array == (0, 255, 0), axis=-1))] = CellType.FOOD
+        # load cell grid
+        cell_grid = np.zeros(self.grid_size, dtype=np.int16)
+        cell_grid[np.where(np.all(src_array == (0, 0, 255), axis=-1))] = CellType.WALL
+        cell_grid[np.where(np.all(src_array == (0, 255, 0), axis=-1))] = CellType.FOOD
+        # load colony positions and add the colonies to the world
+        for id, colony_coords in enumerate(np.argwhere(np.all(src_array == (255, 0, 0), axis=-1)).tolist()):
+            self.colonies.add(colony.Colony(self, self.coords_to_pos(colony_coords), id))
+        return cell_grid
 
-    def spawn_food(self, pos, food_amount):
-        max_dist = 3 * math.sqrt(food_amount)
-        for _ in range(food_amount):
-            spot_found = False
-
-            while not spot_found:
-                dist = np.random.random() * max_dist
-                angle = np.random.random() * 360
-
-                x = int(pos.x + dist * math.cos(angle))
-                y = int(pos.y + dist * math.sin(angle))
-
-                # x = cx + int(r * math.cos(n * math.pi / 180))
-                # y = cy + int(r * math.sin(n * math.pi / 180))
-
-                # x, y = int(pos.x + x_dist), int(pos.y + y_dist)
-                if not self.food_map[x, y]:
-                    self.food_map[x, y] = True
-                    spot_found = True
-
-            # while not spot_found:
-            #     x_dist = np.random.choice([-1, 1]) * (random.random() * math.sqrt(max_dist)) ** 2
-            #     y_dist = np.random.choice([-1, 1]) * (random.random() * math.sqrt(max_dist)) ** 2
-            #     x, y = int(pos.x + x_dist), int(pos.y + y_dist)
-            #     if not self.food_map[x, y]:
-            #         self.food_map[x, y] = True
-            #         spot_found = True
-
-    def update(self, frame_counter, dt):
-        # if frame_counter % PH_DECAY_INTERVAL == 0:
-        #     # apply pheromone decay to pheromone maps
-        #     for ph_map in self.ph_maps:
-        #         np.subtract(ph_map, 1, ph_map)
-        #         ph_map[ph_map < 0] = 0
-
-        # if (frame_counter % PH_DROP_INTERVAL == 0) or (frame_counter % PH_DECAY_INTERVAL == 0):
-        #     # update pheromone masks
-        #     for i, ph_mask in enumerate(self.ph_masks):
-        #         ph_mask.clear()
-        #         for ph_pos in np.column_stack(np.where(self.ph_maps[i])):
-        #             ph_mask.set_at(ph_pos)
-
-        # self.ph_map.update(frame_counter)
-        # self.ants.update(frame_counter, dt)
-        self.colonies.update(frame_counter)
+    def update(self, dt):
+        self.time += dt
+        self.colonies.update()
         self.ants.update(dt)
+        if self.food_grid_changed:
+            self.draw_food_img()
+            self.food_grid_changed = False
 
     def draw(self):
-        self.screen.blit(self.surf, (0, 0))
-        # self.screen.fill(BG_COLOR)
-        # print(self.grid.values.shape, self.grid.values.shape[0])
-        # for x in range(self.grid.values.shape[0]):
-        #     for y in range(self.grid.values.shape[1]):
-        #         draw_rect = (x * grid.CELL_SIZE, y * grid.CELL_SIZE, grid.CELL_SIZE, grid.CELL_SIZE)
-        #         if self.grid.values[x, y] == CellType.WALL:
-        #             pg.draw.rect(self.screen, (127, 127, 127), draw_rect)
-        #         elif self.grid.values[x, y] == CellType.FOOD:
-        #             pg.draw.rect(self.screen, (0, 255, 0), draw_rect)
-
-        # pg.draw.rect(self.screen, (50, 50, 50), (300, 0, 100, 500))
-        # pg.draw.rect(self.screen, (50, 50, 50), (700, 400, 50, 400))
-        # pg.draw.rect(self.screen, (50, 50, 50), (700, 400, 300, 50))
-
-        # self.ph_map.draw(self.screen)
-
-        # for food_pos in np.column_stack(np.where(self.food_map)):
-        #     self.screen.blit(self.img_food, food_pos)
-
-        # for col in self.colonies.sprites():
-        #     for i, ph_grid in enumerate(col.ph_grids):
-        #         ph_surf = pg.Surface(ph_grid.shape, flags=pg.SRCALPHA)
-        #         # ph_surf = pg.Surface(self.screen.get_size(), flags=pg.SRCALPHA)
-        #         ph_surf.fill(PH_COLORS[i])
-        #         alpha_array = pg.surfarray.pixels_alpha(ph_surf)
-        #         alpha_array[:] = ph_grid * (255 // colony.PH_MAX_STRENGTH)
-        #         del alpha_array
-        #         ph_surf = pg.transform.scale(ph_surf, self.screen.get_size())
-        #         self.screen.blit(ph_surf, (0, 0))
-
+        # draw world cell grid (= background + walls)
+        self.screen.blit(self.bg_img, (0, 0))
+        # draw food grid
+        self.screen.blit(self.food_img, (0, 0))
+        # draw phero grids
         for col in self.colonies.sprites():
-            for i, ph_img in enumerate(col.ph_imgs):
-                # ph_surf = pg.Surface(ph_grid.shape, flags=pg.SRCALPHA)
-                # # ph_surf = pg.Surface(self.screen.get_size(), flags=pg.SRCALPHA)
-                # ph_surf.fill(PH_COLORS[i])
-                # alpha_array = pg.surfarray.pixels_alpha(ph_surf)
-                # alpha_array[:] = ph_grid * (255 // colony.PH_MAX_STRENGTH)
-                # del alpha_array
-                # ph_surf = pg.transform.scale(ph_surf, self.screen.get_size())
-                # self.screen.blit(ph_surf, (0, 0))
-                self.screen.blit(ph_img, (0, 0))
-
+            for phero_img in col.phero_imgs:
+                self.screen.blit(phero_img, (0, 0))
+        # draw colonies with food counters
         self.colonies.draw(self.screen)
-
         for col in self.colonies.sprites():
             text, text_rect = self.FONT.render(str(col.food_counter))
             self.screen.blit(text, col.pos - pg.Vector2(text_rect.size) / 2)
-
+        # draw ants
         self.ants.draw(self.screen)
+        # draw sensor masks (for debugging, doesn't work atm)
+        if DEBUG_DRAW_SENSOR_MASKS:
+            for ant in self.ants.sprites():
+                ant.draw_debug_sensor_coords(self.screen)
     
-    def get_cell_type(self, coords):
-        return self.cell_grid_list[coords[0]][coords[1]]
-        # return self.cell_grid[coords]
+    def draw_food_img(self):
+        '''If food has been taken by ants, redraw the food image.'''
+        food_img_pre_scaling = pg.Surface(self.grid_size, flags=pg.SRCALPHA).convert_alpha()
+        food_img_pre_scaling.fill((0, 255, 0))
+        alpha_array = pg.surfarray.pixels_alpha(food_img_pre_scaling)
+        alpha_array[:] = self.food_grid * (255 / INIT_FOOD_PER_CELL)
+        del alpha_array
+        self.food_img = pg.transform.scale(food_img_pre_scaling, (WINDOW_WIDTH, WINDOW_HEIGHT))
+
+    def take_food(self, pos):
+        if FOOD_DEPLETABLE:
+            coords = self.pos_to_coords(pos)
+            self.food_grid[coords] = max(self.food_grid[coords] - 1, 0)
+            self.food_grid_changed = True
+            if self.food_grid[coords] == 0:
+                self.cell_grid[coords] = CellType.EMPTY
+                self.cell_grid_list[coords[0]][coords[1]] = CellType.EMPTY
     
+    def get_nearby_food_pos(self, pos, max_dist):
+        '''Is needed when the food cell an ant has targeted is depleted before the ant reaches it.'''
+        coords = self.pos_to_coords(pos)
+        max_cell_dist = max_dist // CELL_SIZE
+        x_min = max(coords[0] - max_cell_dist, 0)
+        x_max = min(coords[0] + max_cell_dist, self.grid_size[0] - 1)
+        y_min = max(coords[1] - max_cell_dist, 0)
+        y_max = min(coords[1] + max_cell_dist, self.grid_size[1] - 1)
+        food_coords_list = np.argwhere(self.food_grid[x_min : x_max, y_min : y_max]).tolist()
+        if len(food_coords_list):
+            food_coords = food_coords_list[np.random.randint(len(food_coords_list))]
+            return self.coords_to_pos(food_coords)
+        else:
+            return None
+
+    def get_cell_type(self, pos):
+        '''Returns the cell type at a given screen position as a CellType enum value.'''
+        if self.is_in_bounds(pos):
+            coords = self.pos_to_coords(pos)
+            # using a list instead of a numpy array here is much faster for single values
+            return self.cell_grid_list[coords[0]][coords[1]]
+        else:
+            return CellType.OUT_OF_BOUNDS
+
+    # def get_cell_type_coords(self, coords):
+    #     if self.is_in_bounds_coords(coords):
+    #         return self.cell_grid_list[coords[0]][coords[1]]
+    #     else:
+    #         return CellType.OUT_OF_BOUNDS
+
     def is_in_bounds(self, pos):
+        '''Returns True if the given position is inside the screen.'''
         return 0 <= pos.x and pos.x < WINDOW_WIDTH and pos.y >= 0 and pos.y < WINDOW_HEIGHT
 
+    # def is_in_bounds_coords(self, coords):
+    #     return (0 <= coords[0] and coords[0] < self.grid_size[0]
+    #             and coords[1] >= 0 and coords[1] < self.grid_size[1])
+
     def pos_to_coords(self, pos):
+        '''Converts a given screen position to cell / phero grid coords.'''
         coords_x = int(pos.x / CELL_SIZE)
         coords_y = int(pos.y / CELL_SIZE)
         return coords_x, coords_y
+    
+    def coords_to_pos(self, coords):
+        '''Converts given cell / phero grid coords to a screen position.'''
+        return CELL_SIZE * pg.Vector2(coords) + pg.Vector2(CELL_SIZE, CELL_SIZE) / 2
 
-
+    def is_traversable(self, pos):
+        '''Returns True if the given screen position is in bounds and not on a wall cell.'''
+        return self.get_cell_type(pos) not in [CellType.OUT_OF_BOUNDS, CellType.WALL]
