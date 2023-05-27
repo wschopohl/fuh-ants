@@ -1,3 +1,5 @@
+""" Defines some colors """
+
 from Pheromone import Type as PheromoneType
 
 Background = (220, 220, 220)

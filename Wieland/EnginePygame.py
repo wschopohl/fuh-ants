@@ -2,12 +2,11 @@ import pygame
 from Ant import Ant
 from Nest import Nest
 from FoodCluster import FoodCluster
-from Pheromone import Pheromone, Type as PheromoneType
+from Pheromone import Pheromone
 from Map import Map
 import Colors
 import Config
 
-import math
 import threading
 import time
 
@@ -143,10 +142,10 @@ class PGAnt(pygame.sprite.Sprite):
         self.middle = PGAnt.middle_offset.rotate(self.ant.direction)
         renderMutex.release()
 
-    def collision(self, map):
+    def collision(self, map_obj):
         self.update()
         try:
-            answer = self.mask.overlap(map.mask, (-self.rect.x, -self.rect.y)) != None
+            answer = self.mask.overlap(map_obj.mask, (-self.rect.x, -self.rect.y)) is not None
             return answer
         except AttributeError:
             return False
@@ -187,7 +186,8 @@ class PGPheromone(pygame.sprite.Sprite):
     
     @classmethod
     def loadImages(cls):
-        if PGPheromone.pheromone_images != {}: return
+        if PGPheromone.pheromone_images:
+            return
         for color in Colors.PheromoneColors:
             tmp_image = pygame.Surface((Config.PheromoneSize*2, Config.PheromoneSize*2), pygame.SRCALPHA)   # per-pixel alpha
             pygame.draw.circle(tmp_image, Colors.PheromoneColors[color], (Config.PheromoneSize, Config.PheromoneSize), Config.PheromoneSize)
@@ -214,11 +214,14 @@ class PGPheromone(pygame.sprite.Sprite):
         self.kill()
 
 class PGMap(pygame.sprite.Sprite):
-    def __init__(self, map):
-        self.image = pygame.image.load(map.image).convert_alpha()
+    def __init__(self, map_obj):
+        self.image = pygame.image.load(map_obj.image).convert_alpha()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        map.setSprite(self)
+        map_obj.setSprite(self)
+
+    def update(self):
+        pass
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)

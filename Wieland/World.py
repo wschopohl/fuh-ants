@@ -53,11 +53,11 @@ class World:
         if type(object) is Ant:
             self.ants.remove(object)
             object.sprite.kill()
-        
+
     def run(self):
         for nest in self.nests:
             nest.run()
-        
+
         ThreadHelper.start("ants", self.antLoop)
         ThreadHelper.start("collisions", self.collisionLoop)
         ThreadHelper.start("pheromones", self.pheromoneLoop)
@@ -84,7 +84,6 @@ class World:
             for ant in self.ants:
                 ant.move()
                 # ant.sense(self.pheromones)
-        
             time.sleep(Config.AntSleepTime)
 
     def collisionLoop(self, running):
@@ -98,7 +97,7 @@ class World:
             for pheromone in self.pheromones:
                 pheromone.decay(Config.PheromoneDecay)
             time.sleep(Config.AntSleepTime)
-            
+
     def checkFoodClusterCollision(self):
         for foodcluster in self.foodclusters:
             if foodcluster.amount == 0: 
