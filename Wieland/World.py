@@ -7,6 +7,7 @@ from FoodCluster import FoodCluster
 from Pheromone import Pheromone
 from CollisionPygame import CollisionPygame
 from PheromoneMap import PheromoneMap
+from Map import Map
 import Config
 import ThreadHelper
 
@@ -20,6 +21,7 @@ class World:
         self.pheromones = []
         self.pheromoneMap = PheromoneMap(self)
         self.collision = CollisionPygame()
+        self.map = None
 
     def setup(self, render_engine):
         self.render_engine = render_engine
@@ -40,11 +42,17 @@ class World:
                 object.setWorld(self)
                 self.pheromones.append(object)
                 self.render_engine.add(object)
+        elif type(object) is Map:
+            self.map = object
+            self.render_engine.add(object)
 
     def remove(self, object):
         if type(object) is Pheromone:
             self.pheromoneMap.remove(object)
             self.pheromones.remove(object)
+        if type(object) is Ant:
+            self.ants.remove(object)
+            object.sprite.kill()
         
     def run(self):
         for nest in self.nests:
@@ -53,6 +61,14 @@ class World:
         ThreadHelper.start("ants", self.antLoop)
         ThreadHelper.start("collisions", self.collisionLoop)
         ThreadHelper.start("pheromones", self.pheromoneLoop)
+
+    def update(self):
+        for nest in self.nests: nest.update()
+        for ant in self.ants: ant.move()
+
+        self.checkFoodClusterCollision()
+        self.checkNestCollision()
+        for pheromone in self.pheromones: pheromone.decay(Config.PheromoneDecay)
 
     def stop(self):
         for nest in self.nests:

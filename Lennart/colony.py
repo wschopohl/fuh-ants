@@ -4,10 +4,9 @@ import numpy as np
 from constants import *
 import ant
 
-IMG = pg.image.load('img/colony.png')
-
 
 class Colony(pg.sprite.Sprite):
+    '''Spawns ants, counts food and handles pheromone trail data and images.'''
 
     def __init__(self, world, pos, id):
         pg.sprite.Sprite.__init__(self)
@@ -17,74 +16,85 @@ class Colony(pg.sprite.Sprite):
         self.id = id
         self.food_counter = 0
 
-        self.ph_grids = []
-        for _ in range(len(PheromoneType)):
-            self.ph_grids.append(np.zeros(self.world.grid_size, dtype=np.int16))
+        self.image = pg.image.load('img/colony.png')
+        self.rect = self.image.get_rect(center=pos)
+        self.radius = 20
+
+        self.next_phero_decay_update = self.world.time + PHERO_DECAY_UPDATE_INTERVAL
+        self.next_phero_img_update = self.world.time + PHERO_IMG_UPDATE_INTERVAL
+
+        # phero grids are padded with zeroes at the bottom and right, so that get_phero_grid_vicinity() 
+        # works properly
+        self.phero_grids = []
+        for _ in range(len(PheroType)):
+            grid_size = (self.world.grid_size[0] + 2 * PHERO_ARR_OFFSET,
+                            self.world.grid_size[1] + 2 * PHERO_ARR_OFFSET)
+            self.phero_grids.append(np.zeros(grid_size, dtype=np.int16))
         
-        self.ph_grid_lists = []
-        for _ in range(len(PheromoneType)):
-            self.ph_grid_lists.append(np.zeros(self.world.grid_size, dtype=np.int16).tolist())
-        
-        self.ph_imgs = []
-        for _ in range(len(PheromoneType)):
+        # phero images are used to display the phero trails on the screen, these are not updated every frame
+        self.phero_imgs = []
+        for _ in range(len(PheroType)):
             surf = pg.Surface(self.world.grid_size, flags=pg.SRCALPHA)
             surf.fill((0, 0, 0, 0))
-            self.ph_imgs.append(surf)
+            self.phero_imgs.append(surf)
 
-        self.image = IMG
-        self.rect = self.image.get_rect(center=pos)
-
-        # for i in range(MAX_ANTS_PER_COLONY):
-        #     self.world.ants.add(ant.Ant(self.world, self.pos, i / MAX_ANTS_PER_COLONY * 360, self))
-        phero = ant.PheroGrid(self.world.screen.get_size())
         for i in range(MAX_ANTS_PER_COLONY):
-            self.world.ants.add(ant.Ant(self.world, self.pos, i / MAX_ANTS_PER_COLONY * 360, self, phero))
+            self.world.ants.add(ant.Ant(self.world, self.pos, i / MAX_ANTS_PER_COLONY * 360, self))
 
-    def update(self, frame_counter):
-        if frame_counter % PH_DECAY_INTERVAL == 0:
-            # for ph_grid_list in self.ph_grid_lists:
-            #     for x in range(self.world.grid_size[0]):
-            #         for y in range(self.world.grid_size[1]):
-            #             ph_grid_list[x][y] -= PH_DECAY_AMOUNT
-            #             ph_grid_list[x][y] = max(ph_grid_list[x][y], 0)
-            for i, ph_grid_list in enumerate(self.ph_grid_lists):
-                ph_grid = np.array(ph_grid_list)
-                np.subtract(ph_grid, PH_DECAY_AMOUNT, ph_grid)
-                ph_grid[ph_grid < 0] = 0
-                self.ph_grid_lists[i] = ph_grid.tolist()
-        # if frame_counter % PH_DECAY_INTERVAL == 0:
-        #     for ph_grid in self.ph_grids:
-        #         np.subtract(ph_grid, PH_DECAY_AMOUNT, ph_grid)
-        #         ph_grid[ph_grid < 0] = 0
+    def update(self):
+        # apply a decay tick to phero grid
+        if self.world.time > self.next_phero_decay_update:
+            for i, phero_grid in enumerate(self.phero_grids):
+                np.subtract(phero_grid, PHERO_DECAY_AMOUNT, phero_grid)
+                phero_grid[phero_grid < 0] = 0
+            self.next_phero_decay_update = self.world.time + PHERO_DECAY_UPDATE_INTERVAL
 
-        if frame_counter % PH_IMG_UPDATE_INTERVAL == 0:
-        # if frame_counter % PH_DECAY_INTERVAL == 0:
-        # if frame_counter % PH_DECAY_INTERVAL == 0 or frame_counter % PH_DROP_INTERVAL == 0:
-            for i, ph_img in enumerate(self.ph_imgs):
-                ph_img_pre_scaling = pg.Surface(self.world.grid_size, flags=pg.SRCALPHA).convert_alpha()
-                ph_img_pre_scaling.fill(PH_COLORS[i])
-                alpha_array = pg.surfarray.pixels_alpha(ph_img_pre_scaling)
-                # print(np.array(self.ph_grid_lists[i]))
-                alpha_array[:] = np.array(self.ph_grid_lists[i]) * (127 / PH_MAX_STRENGTH)
-                # print(self.grids[i])
+        # redraw the image representing the pheromone trails for the colony
+        if self.world.time > self.next_phero_img_update:
+            for i, phero_img in enumerate(self.phero_imgs):
+                phero_img_pre_scaling = pg.Surface(self.world.grid_size, flags=pg.SRCALPHA).convert_alpha()
+                phero_img_pre_scaling.fill(PHERO_COLORS[self.id][i])
+                alpha_array = pg.surfarray.pixels_alpha(phero_img_pre_scaling)
+                # sliced to not include the padding at the bottom and right
+                alpha_array[:] = (self.phero_grids[i][: -2 * PHERO_ARR_OFFSET, : -2 * PHERO_ARR_OFFSET]
+                                  * (127 / PHERO_MAX_STRENGTH))
                 del alpha_array
-                self.ph_imgs[i] = pg.transform.scale(ph_img_pre_scaling, (WINDOW_WIDTH, WINDOW_HEIGHT))
+                self.phero_imgs[i] = pg.transform.scale(phero_img_pre_scaling, (WINDOW_WIDTH, WINDOW_HEIGHT))
+            self.next_phero_img_update = self.world.time + PHERO_IMG_UPDATE_INTERVAL
 
-    def get_ph_strength(self, coords, ph_type):
-        return self.ph_grid_lists[ph_type][coords[0]][coords[1]]
+    def get_phero_strength(self, coords, phero_type):
+        return self.phero_grids[phero_type][coords]
+        
+    def get_phero_grid_vicinity(self, pos, max_dist, phero_type):
+        '''Returns a phero grid square slice corresponding to the given pheromone type.
+        
+        Contains the cell corresponding to the given screen pos and all cells that are no further than max_dist 
+        away from that cell horizontally and vertically. The returned slice contains zeroes at indices outside 
+        of the world grid size.
+        '''
+        coords_x, coords_y = self.world.pos_to_coords(pos)
+        coords_x = int(pg.math.clamp(coords_x, 0, self.world.grid_size[0] - 1))
+        coords_y = int(pg.math.clamp(coords_y, 0, self.world.grid_size[1] - 1))
+        if coords_x - max_dist >= 0 and coords_y - max_dist >= 0:
+            # if the ant is at the very bottom / right of the screen, indices larger than the world grid size 
+            # will fall into the zero padding on the bottom / right
+            return self.phero_grids[phero_type][coords_x - max_dist : coords_x + max_dist + 1,
+                                                coords_y - max_dist : coords_y + max_dist + 1]
+        else:
+            # if the ant is at the very top / left of the screen, the vicinity may contain negative indices, by 
+            # using numpy.take these indices can be 'rolled over' to the zero padding on the bottom / right
+            range_x = range(coords_x - max_dist, coords_x + max_dist + 1)
+            range_y = range(coords_y - max_dist, coords_y + max_dist + 1)
+            return self.phero_grids[phero_type].take(range_x, mode='wrap', axis=0).take(range_y, mode='wrap', axis=1)
 
-    def add_pheromone(self, coords, strength, ph_type):
-        self.ph_grid_lists[ph_type][coords[0]][coords[1]] += strength * PH_ADD_AMOUNT
-        if self.ph_grid_lists[ph_type][coords[0]][coords[1]] > PH_MAX_STRENGTH:
-            self.ph_grid_lists[ph_type][coords[0]][coords[1]] = PH_MAX_STRENGTH
+    def add_phero(self, coords, strength, phero_type):
+        '''Adds pheromone of a given type to the given coords of the corresponding phero grid.
+        
+        strength should be a value between 0 and 1.
+        '''
+        self.phero_grids[phero_type][coords] += strength * PHERO_ADD_AMOUNT
+        if self.phero_grids[phero_type][coords] > PHERO_MAX_STRENGTH:
+            self.phero_grids[phero_type][coords] = PHERO_MAX_STRENGTH
 
-    # def get_ph_strength(self, coords, ph_type):
-    #     return self.ph_grids[ph_type][coords]
-
-    # def add_pheromone(self, coords, strength, ph_type):
-    #     self.ph_grids[ph_type][coords] += strength * PH_ADD_AMOUNT
-    #     if self.ph_grids[ph_type][coords] > PH_MAX_STRENGTH:
-    #         self.ph_grids[ph_type][coords] = PH_MAX_STRENGTH
-    
     def add_food(self):
         self.food_counter += 1

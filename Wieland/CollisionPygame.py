@@ -8,7 +8,15 @@ class CollisionPygame():
         (pgsprite, pggroup) = self.getPGObjects(single, cluster)
         if pgsprite == None: return []
 
-        pgobjs = pygame.sprite.spritecollide(pgsprite, pggroup, False)
+        pgobjs = pygame.sprite.spritecollide(pgsprite, pggroup, False, pygame.sprite.collide_circle)
+        objs = [pgobj.ant for pgobj in pgobjs]
+        return objs
+    
+    def checkMask(self, single, cluster):
+        (pgsprite, pggroup) = self.getPGObjects(single, cluster)
+        if pgsprite == None: return []
+
+        pgobjs = pygame.sprite.spritecollide(pgsprite, pggroup, False, pygame.sprite.collide_mask)
         objs = [pgobj.ant for pgobj in pgobjs]
         return objs
     

@@ -56,6 +56,7 @@ for n in range(62): #62 sprites auf 8x8 grid
 Umwelt = umwelt.umwelt(F_breite,F_hoehe)
 
 Umwelt.map = pygame.surfarray.array2d(bg_map)
+Umwelt.map = Umwelt.map*-1+1
 Umwelt.add_colony()
 
 
@@ -107,13 +108,13 @@ while spielaktiv:
             
 
     for food in Umwelt.food_places:
-        pygame.draw.circle(screen, SCHWARZ, (food.pos[0]+10,food.pos[1]+10), 20)
+        pygame.draw.circle(screen, SCHWARZ, food.pos, 20)
 
     for colony in Umwelt.colonys:
         #äphero_map = pygame.surfarray.make_surface(colony.phero[0])
         #phero_map.set_colorkey(0)
         #surf_phero_a.set_alpha(colony.phero[0])
-        pygame.draw.circle(screen, GRAU, (colony.pos[0]+10,colony.pos[1]+10), 20)
+        pygame.draw.circle(screen, GRAU, colony.pos, 20)
         surf_phero_a_alpha = pygame.surfarray.pixels_alpha(surf_phero_a)
         surf_phero_a_alpha[:] = colony.phero[0]#.astype('uint8')
         del surf_phero_a_alpha

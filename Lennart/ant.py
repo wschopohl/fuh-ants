@@ -1,415 +1,359 @@
 import pygame as pg
 import numpy as np
-import math
 import random
 
-from math import pi, sin, cos, atan2, radians, degrees
-from random import randint
-
 from constants import *
-
-SPEED = 100.0
-TURN_RATE = 120.0
-
-FOOD_PICKUP_RANGE = 10
-
-PH_MAX_STRENGTH = 10
-# PH_CHECK_RANGE = 100
-# PH_CHECK_ANGLE = 90     # in degrees, should be >= 1 and <= 180
-PH_CHECK_RANGE = 50
-PH_CHECK_ANGLE = 90     # in degrees, should be >= 1 and <= 180
-
-IMG_ROT_STEP = 1   # must be divisor of 360
-# IMG_ROT_STEP = 10   # must be divisor of 360
-IMG_LIST_SIZE = 360 // IMG_ROT_STEP
 
 
 class Ant(pg.sprite.Sprite):
 
+    # contains rotated versions of ant images with / without food
     img_no_food_list = []
     img_with_food_list = []
-    ph_check_mask_list = []  # default angle corresponds to the middle sensor
-    ph_check_mask_arrays = []  # default angle corresponds to the middle sensor
+    # contains rotated versions of "bitmasks" consisting of numpy array indices used for counting pheromones
+    # in areas shaped like circle sectors
+    phero_mask_list = []
 
     @staticmethod
     def init():
+        '''Creates and saves rotated versions of ant images and phero masks, so that it doesn't need to be done
+        anew each frame. The rotation step in degrees is specified by IMG_ROT_STEP.
+        '''
         img_no_food = pg.image.load('img/ant_no_food_red.png').convert_alpha()
         img_with_food = pg.image.load('img/ant_with_food_red.png').convert_alpha()
         for i in range(IMG_LIST_SIZE):
-            # pg.transform.rotate rotates counterclockwise, so a negative angle is used to match
-            # the clockwise rotations used everywhere else
+            # pg.transform.rotate rotates counterclockwise, so a negative angle is used to match the clockwise
+            # rotations used everywhere else
             Ant.img_no_food_list.append(Ant._rotate_around_center_and_crop(img_no_food, -i * IMG_ROT_STEP))
             Ant.img_with_food_list.append(Ant._rotate_around_center_and_crop(img_with_food, -i * IMG_ROT_STEP))
+        for i in range(PHERO_MASK_LIST_SIZE):
+            indices = [[], []]
+            r = PHERO_SENSOR_DIST // CELL_SIZE
+            for x in range(-r, r + 1):
+                for y in range(-r, r + 1):
+                    v = pg.Vector2(x, y)
+                    if v.magnitude() * CELL_SIZE <= PHERO_SENSOR_DIST:
+                        angle_diff = (v.as_polar()[1] - i) % 360
+                        if angle_diff < PHERO_SENSOR_ANGLE / 2 or angle_diff >= 360 - PHERO_SENSOR_ANGLE / 2:
+                            indices[0].append(x + r)
+                            indices[1].append(y + r)
+            Ant.phero_mask_list.append(tuple(indices))
 
-    def __init__(self, world, pos, angle, colony, phero):
+
+    def __init__(self, world, pos, angle, colony):
         pg.sprite.Sprite.__init__(self)
-
         self.world = world
         self.colony = colony
-        self.pos = pos.copy()
-        self.angle = angle          # in degrees
-        self.timer = 0
-        # self.mode = AntMode.TO_FOOD
-        self.wander_strength = 0.1
-        # self.just_found_food = False
+        self.mode = AntMode.TO_FOOD
 
-        self.image = Ant.img_no_food_list[round(self.angle / IMG_ROT_STEP) % IMG_LIST_SIZE]
+        # movement / position
+        self.pos = pos.copy()
+        self.forward_dir = pg.Vector2(1, 0).rotate(angle)
+        self.velo = self.forward_dir * MAX_SPEED
+        self.turning_around = False
+
+        # steering direction update times
+        self.next_random_steer_update = self.world.time
+        self.next_target_steer_update = self.world.time + random.random() * TARGET_STEER_UPDATE_INTERVAL
+        self.next_obstacle_steer_update = self.world.time * random.random() * OBSTACLE_STEER_UPDATE_INTERVAL
+        
+        # steering vectors
+        self.random_steer_force = pg.Vector2(0, 0)
+        self.phero_steer_force = pg.Vector2(0, 0)
+        self.obstacle_steer_force = pg.Vector2(0, 0)
+        self.turn_around_force = pg.Vector2(0, 0)
+
+        # pheromone placing / food targeting
+        self.last_phero_event_time = self.world.time
+        self.last_phero_pos = self.pos
+        self.target_food_pos = None
+
+        # visual representation
+        self.image = Ant.img_no_food_list[round(angle / IMG_ROT_STEP) % IMG_LIST_SIZE]
         self.rect = self.image.get_rect()
         self.rect.center = self.pos
 
-        # =====
+        # debugging
+        self.debug_sensor_coords = []
 
-        self.drawSurf = world.screen
-        self.curW, self.curH = self.drawSurf.get_size()
-        self.pgSize = (int(self.curW/CELL_SIZE), int(self.curH/CELL_SIZE))
-        self.isMyTrail = np.full(self.pgSize, False)
-        self.phero = phero
-        self.nest = self.colony.pos
-
-        # self.image = pg.Surface((12, 21)).convert()
-        # self.image.set_colorkey(0)
-        # cBrown = (100,42,42)
-        # # Draw Ant
-        # pg.draw.aaline(self.image, cBrown, [0, 5], [11, 15])
-        # pg.draw.aaline(self.image, cBrown, [0, 15], [11, 5]) # legs
-        # pg.draw.aaline(self.image, cBrown, [0, 10], [12, 10])
-        # pg.draw.aaline(self.image, cBrown, [2, 0], [4, 3]) # antena l
-        # pg.draw.aaline(self.image, cBrown, [9, 0], [7, 3]) # antena r
-        # pg.draw.ellipse(self.image, cBrown, [3, 2, 6, 6]) # head
-        # pg.draw.ellipse(self.image, cBrown, [4, 6, 4, 9]) # body
-        # pg.draw.ellipse(self.image, cBrown, [3, 13, 6, 8]) # rear
-        # # save drawing for later
-        # self.orig_img = pg.transform.rotate(self.image.copy(), -90)
-        # # save drawing for later
-        # # self.orig_img = self.image
-        # # self.orig_img = pg.image.load('img/ant_no_food_red.png').convert_alpha()
-        # self.rect = self.image.get_rect(center=self.nest)
-
-        self.ang = self.angle
-        self.desireDir = pg.Vector2(cos(radians(self.ang)),sin(radians(self.ang)))
-        self.pos = pg.Vector2(self.rect.center)
-        self.vel = pg.Vector2(0,0)
-        self.last_sdp = (self.nest[0]/10/2,self.nest[1]/10/2)
-        self.mode = AntMode.TO_FOOD
-
-    
-    # def update(self, dt):
-    #     pass
-
-    def update(self, dt):  # behavior
-        
-
-        # =====
-
-        mid_result = left_result = right_result = 0
-        mid_GA_result = left_GA_result = right_GA_result = CellType.EMPTY
-        randAng = randint(0,360)
-        accel = pg.Vector2(0,0)
-        foodColor = CellType.FOOD  # color of food to look for
-        # foodColor = (0, 255, 0)  # color of food to look for
-        wandrStr = .12  # how random they walk around
-        maxSpeed = 12  # 10-12 seems ok
-        steerStr = 3  # 3 or 4, dono
-        # Converts ant's current screen coordinates, to smaller resolution of pherogrid.
-        scaledown_pos = (int(self.pos.x/CELL_SIZE), int(self.pos.y/CELL_SIZE))
-        #scaledown_pos = (int((self.pos.x/self.curW)*self.pgSize[0]), int((self.pos.y/self.curH)*self.pgSize[1]))
-        # Get locations to check as sensor points, in pairs for better detection.
-        mid_sens = self.pos + pg.Vector2(20, 0).rotate(self.ang)
-        left_sens = self.pos + pg.Vector2(18, -8).rotate(self.ang)
-        right_sens = self.pos + pg.Vector2(18, 8).rotate(self.ang)
-        # mid_sens = Vec2.vint(self.pos + pg.Vector2(20, 0).rotate(self.ang))
-        # left_sens = Vec2.vint(self.pos + pg.Vector2(18, -8).rotate(self.ang)) # -9
-        # right_sens = Vec2.vint(self.pos + pg.Vector2(18, 8).rotate(self.ang)) # 9
-
-        if self.drawSurf.get_rect().collidepoint(mid_sens):
-            mspos = (mid_sens[0]//CELL_SIZE,mid_sens[1]//CELL_SIZE)
-            mid_result, mid_isID, mid_GA_result = self.sensCheck(mid_sens)
-            # mid_result = self.phero.img_array[mspos]
-            # mid_isID = self.isMyTrail[mspos]
-            # mid_GA_result = self.drawSurf.get_at(mid_sens)[:3]
-        if self.drawSurf.get_rect().collidepoint(left_sens):
-            left_result, left_isID, left_GA_result = self.sensCheck(left_sens)
-        if self.drawSurf.get_rect().collidepoint(right_sens):
-            right_result, right_isID, right_GA_result = self.sensCheck(right_sens)
-        # print(mid_result, left_result, right_result, mid_GA_result, left_GA_result, right_GA_result)
-
-        pg.draw.circle(self.drawSurf, (200,0,200), mid_sens, 1)
-        pg.draw.circle(self.drawSurf, (200,0,200), left_sens, 1)
-        pg.draw.circle(self.drawSurf, (200,0,200), right_sens, 1)
-
-        # if self.mode == 0 and self.pos.distance_to(self.nest) > 21:
-        #     self.mode = 1
-
-        if self.mode == AntMode.TO_FOOD:  # Look for food, or trail to food.
-            setAcolor = (0,0,100)
-            if scaledown_pos != self.last_sdp and scaledown_pos[0] in range(0,self.pgSize[0]) and scaledown_pos[1] in range(0,self.pgSize[1]):
-                ph_strength = 0.5 ** (self.timer / 5000)
-                self.colony.add_pheromone(scaledown_pos, ph_strength, 1 - self.mode)
-                # self.phero.img_array[scaledown_pos] += setAcolor
-                self.isMyTrail[scaledown_pos] = True
-                self.last_sdp = scaledown_pos
-            if mid_result > max(left_result, right_result):
-                self.desireDir += pg.Vector2(1,0).rotate(self.ang).normalize()
-                wandrStr = .1
-                # wandrStr = .2
-            elif left_result > right_result:
-                self.desireDir += pg.Vector2(1,-2).rotate(self.ang).normalize() #left (0,-1)
-                wandrStr = .1
-                # wandrStr = .2
-            elif right_result > left_result:
-                self.desireDir += pg.Vector2(1,2).rotate(self.ang).normalize() #right (0, 1)
-                wandrStr = .1
-                # wandrStr = .2
-            if left_GA_result == foodColor and right_GA_result != foodColor:
-                self.desireDir += pg.Vector2(0,-1).rotate(self.ang).normalize() #left (0,-1)
-                wandrStr = .1
-            elif right_GA_result == foodColor and left_GA_result != foodColor:
-                self.desireDir += pg.Vector2(0,1).rotate(self.ang).normalize() #right (0, 1)
-                wandrStr = .1
-            elif mid_GA_result == foodColor: # if food
-                self.desireDir = pg.Vector2(-1,0).rotate(self.ang).normalize() #pg.Vector2(self.nest - self.pos).normalize()
-                #self.lastFood = self.pos + pg.Vector2(21, 0).rotate(self.ang)
-                maxSpeed = 5
-                wandrStr = .01
-                steerStr = 5
-                self.mode = AntMode.TO_HOME
-                self.timer = 0
-
-        elif self.mode == AntMode.TO_HOME:  # Once found food, either follow own trail back to nest, or head in nest's general direction.
-            setAcolor = (0,80,0)
-            if scaledown_pos != self.last_sdp and scaledown_pos[0] in range(0,self.pgSize[0]) and scaledown_pos[1] in range(0,self.pgSize[1]):
-                ph_strength = 0.5 ** (self.timer / 5000)
-                self.colony.add_pheromone(scaledown_pos, ph_strength, 1 - self.mode)
-                # self.phero.img_array[scaledown_pos] += setAcolor
-                self.last_sdp = scaledown_pos
-            if self.pos.distance_to(self.nest) < 24:
-                #self.desireDir = pg.Vector2(self.lastFood - self.pos).normalize()
-                self.desireDir = pg.Vector2(-1,0).rotate(self.ang).normalize()
-                self.isMyTrail[:] = False #np.full(self.pgSize, False)
-                maxSpeed = 5
-                wandrStr = .01
-                steerStr = 5
-                self.mode = AntMode.TO_FOOD
-                self.timer = 0
-                self.colony.add_food()
-            elif mid_result > max(left_result, right_result) and mid_isID: #and mid_result[:2] == (0,0):
-                self.desireDir += pg.Vector2(1,0).rotate(self.ang).normalize()
-                wandrStr = .1
-                # wandrStr = .2
-            elif left_result > right_result and left_isID: #and left_result[:2] == (0,0):
-                self.desireDir += pg.Vector2(1,-2).rotate(self.ang).normalize() #left (0,-1)
-                wandrStr = .1
-                # wandrStr = .2
-            elif right_result > left_result and right_isID: #and right_result[:2] == (0,0):
-                self.desireDir += pg.Vector2(1,2).rotate(self.ang).normalize() #right (0, 1)
-                wandrStr = .1
-                # wandrStr = .2
-            # else:  # maybe first add ELSE FOLLOW OTHER TRAILS?
-            #     self.desireDir += pg.Vector2(self.nest - self.pos).normalize() * .08
-            #     wandrStr = .1   #pg.Vector2(self.desireDir + (1,0)).rotate(pg.math.Vector2.as_polar(self.nest - self.pos)[1])
-
-        wallColor = CellType.WALL  # avoid walls of this color
-        # wallColor = (127, 127, 127)  # avoid walls of this color
-        if left_GA_result == wallColor:
-            self.desireDir += pg.Vector2(0,2).rotate(self.ang) #.normalize()
-            wandrStr = .1
-            steerStr = 7
-        elif right_GA_result == wallColor:
-            self.desireDir += pg.Vector2(0,-2).rotate(self.ang) #.normalize()
-            wandrStr = .1
-            steerStr = 7
-        elif mid_GA_result == wallColor:
-            self.desireDir = pg.Vector2(-2,0).rotate(self.ang) #.normalize()
-            maxSpeed = 4
-            wandrStr = .1
-            steerStr = 7
-
-        # Avoid edges
-        if not self.drawSurf.get_rect().collidepoint(left_sens) and self.drawSurf.get_rect().collidepoint(right_sens):
-            self.desireDir += pg.Vector2(0,1).rotate(self.ang) #.normalize()
-            wandrStr = .01
-            steerStr = 5
-        elif not self.drawSurf.get_rect().collidepoint(right_sens) and self.drawSurf.get_rect().collidepoint(left_sens):
-            self.desireDir += pg.Vector2(0,-1).rotate(self.ang) #.normalize()
-            wandrStr = .01
-            steerStr = 5
-        elif not self.drawSurf.get_rect().collidepoint(Vec2.vint(self.pos + pg.Vector2(21, 0).rotate(self.ang))):
-            self.desireDir += pg.Vector2(-1,0).rotate(self.ang) #.normalize()
-            maxSpeed = 5
-            wandrStr = .01
-            steerStr = 5
-
-        randDir = pg.Vector2(cos(radians(randAng)),sin(radians(randAng)))
-        self.desireDir = pg.Vector2(self.desireDir + randDir * wandrStr).normalize()
-        dzVel = self.desireDir * maxSpeed
-        dzStrFrc = (dzVel - self.vel) * steerStr
-        accel = dzStrFrc if pg.Vector2(dzStrFrc).magnitude() <= steerStr else pg.Vector2(dzStrFrc.normalize() * steerStr)
-        velo = self.vel + accel * dt
-        self.vel = velo if pg.Vector2(velo).magnitude() <= maxSpeed else pg.Vector2(velo.normalize() * maxSpeed)
-        self.pos += self.vel * dt
-        self.ang = degrees(atan2(self.vel[1],self.vel[0]))
-
-        img_index = round(self.ang / IMG_ROT_STEP) % IMG_LIST_SIZE
+    def update(self, dt):
+        self.place_phero()
+        self.handle_random_steering()
         if self.mode == AntMode.TO_FOOD:
-            self.image = Ant.img_no_food_list[img_index]
-        else:
-            self.image = Ant.img_with_food_list[img_index]
-
-        # # adjusts angle of img to match heading
-        # self.image = pg.transform.rotate(self.orig_img, -self.ang)
-
-        self.rect = self.image.get_rect(center=self.rect.center)  # recentering fix
-        # actually update position
-        self.rect.center = self.pos
-
-        # =====
-
-        self.timer += dt
-
-    def sensCheck(self, sensor_pos): #, pos2): # checks given points in Array, IDs, and pixels on screen.
-        sensor_coords = self.world.pos_to_coords(sensor_pos)
-        # array_r = 0
-        # ga_r = 0
-        array_r = self.colony.get_ph_strength(sensor_coords, self.mode)
-        ga_r = self.world.get_cell_type(sensor_coords)
-        return array_r, True, ga_r
-    
-        # sdpos = (int(pos[0]/CELL_SIZE),int(pos[1]/CELL_SIZE))
-        # array_r = self.phero.img_array[sdpos]
-        # ga_r = self.drawSurf.get_at(pos)[:3]
-        # return array_r, self.isMyTrail[sdpos], ga_r
-    
-    # ===========================
-    
-    def get_sensor_data(self, sensor_pos):
-        sensor_coords = self.world.pos_to_coords(sensor_pos)
-        return self.world.get_cell_type(sensor_coords), self.colony.get_ph_strength(sensor_coords, self.mode)
-
-    def determine_desired_dir(self):
-        sample_count = 20
-        max_ph_strength = 0
-        desired_dir = self.angle
-
-        for _ in range(sample_count):
-            sample_dir = self.angle - PH_CHECK_ANGLE + random.random() * PH_CHECK_ANGLE * 2
-            sample_dist = random.random() * PH_CHECK_RANGE
-            sensor_pos = self.pos + pg.Vector2.from_polar((sample_dist, sample_dir))
-
-            if self.world.is_in_bounds(sensor_pos):
-                cell_type, ph_strength = self.get_sensor_data(sensor_pos)
-                if cell_type == CellType.WALL:
-                    continue
-                elif cell_type == CellType.FOOD and self.mode == AntMode.TO_FOOD:
-                    desired_dir = sample_dir
-                    break
-                elif self.pos.distance_to(self.colony.pos) < 50 and self.mode == AntMode.TO_HOME:
-                    desired_dir = sample_dir
-                    break
-                elif ph_strength > max_ph_strength:
-                    max_ph_strength = ph_strength
-                    desired_dir = sample_dir
-
-        random_dir = random.random() * 360 - 180
-        desired_dir += random_dir * self.wander_strength
-        desired_dir %= 360
-
-        return desired_dir
-
-    def move(self, frame_counter, dt):
-        desired_dir = self.determine_desired_dir()
-        if (desired_dir - self.angle) % 360 > 180:
-            self.angle -= TURN_RATE * dt / 1000
-        else:
-            self.angle += TURN_RATE * dt / 1000
-        self.angle %= 360
-        # print(self.angle, desired_dir)
-        self.pos += pg.Vector2(SPEED * dt / 1000, 0).rotate(self.angle)
-        self.rect.center = self.pos
-
-        if self.pos.x < 0:
-            # self.pos.x = 0
-            self.angle = 180 - self.angle
-        if self.pos.x >= WINDOW_WIDTH:
-            # self.pos.x = WINDOW_WIDTH - 1
-            self.angle = 180 - self.angle
-        if self.pos.y < 0:
-            # self.pos.y = 0
-            self.angle = 360 - self.angle
-        if self.pos.y >= WINDOW_HEIGHT:
-            # self.pos.y = WINDOW_WIDTH - 1
-            self.angle = 360 - self.angle
-        
-        if self.mode == AntMode.TO_FOOD:
-            if self.world.is_in_bounds(self.pos):
-                coords = self.world.pos_to_coords(self.pos)
-                if self.world.get_cell_type(coords) == CellType.FOOD:
-                    self.mode = AntMode.TO_HOME
-                    self.angle += 180
-                    self.timer = 0
+            self.handle_food_search()
         elif self.mode == AntMode.TO_HOME:
-            if self.pos.distance_to(self.colony.pos) < 25:
-                self.mode = AntMode.TO_FOOD
-                self.angle += 180
-                self.timer = 0
+            self.handle_return_to_colony()
+        self.handle_obstacle_steering()
+        self.move(dt)
 
-        img_index = round(self.angle / IMG_ROT_STEP) % IMG_LIST_SIZE
+    def move(self, dt):
+        # combine the different steering vectors
+        steer_force = self.random_steer_force + self.phero_steer_force + self.obstacle_steer_force
+
+        if self.turning_around:
+            steer_force += self.turn_around_force * TARGET_STEER_STRENGTH
+            if self.world.time > self.turn_around_end_time:
+                self.turning_around = False
+                # print('stop turning around')
+
+        if steer_force.magnitude() > 0:
+            desired_velo = steer_force.normalize() * MAX_SPEED
+        else:
+            desired_velo = pg.Vector2(0, 0)
+        self.steer_towards(desired_velo, dt)
+
+        self.forward_dir = self.velo.normalize()
+        move_dist = self.velo.magnitude() * dt
+        desired_pos = self.pos + self.velo * dt
+
+        # if wall close ahead, turn around and "teleport" back a little
+        if not self.world.is_traversable(self.pos + self.forward_dir * OBSTACLE_SPOT_DIST / 2):
+            if not self.turning_around:
+                self.start_turn_around(2)
+            desired_pos = self.pos - self.forward_dir * max(COLLISION_RADIUS, move_dist)
+        self.pos = desired_pos
+
+        # apply newly changed position and direction to the visual representation of the ant
+        img_index = round(self.forward_dir.as_polar()[1] / IMG_ROT_STEP) % IMG_LIST_SIZE
         if self.mode == AntMode.TO_FOOD:
             self.image = Ant.img_no_food_list[img_index]
         else:
             self.image = Ant.img_with_food_list[img_index]
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.rect.center = self.pos
+    
+    '''Modifies the ants current velocity vector towards its desired velocity vector.'''
+    def steer_towards(self, desired_velo, dt):
+        steering_force = desired_velo - self.velo
 
-    def update_old(self, frame_counter, dt):
-        if frame_counter % PH_DROP_INTERVAL == 0:
-            if self.world.is_in_bounds(self.pos):
-                coords = self.world.pos_to_coords(self.pos)
-                ph_strength = 0.5 ** (self.timer / 5000)
-                self.colony.add_pheromone(coords, ph_strength, 1 - self.mode)
+        accel = steering_force * ACCEL
+        if accel.magnitude() > 0:
+            accel.clamp_magnitude(ACCEL)
+        self.velo += accel * dt
+        self.velo.clamp_magnitude(MAX_SPEED)
 
-        self.move(frame_counter, dt)
-        self.timer += dt
+    def place_phero(self):
+        # can't place pheromone to close to the last spot
+        if self.world.is_in_bounds(self.pos) and self.pos.distance_to(self.last_phero_pos) > DIST_BETWEEN_MARKERS:
+            coords = self.world.pos_to_coords(self.pos)
+            # the ant's pheromone strength halves every PHERO_PLACEMENT_AMOUNT_HALVING_TIME seconds
+            phero_strength = 0.5 ** ((self.world.time - self.last_phero_event_time) / PHERO_PLACEMENT_AMOUNT_HALVING_TIME)
+            if self.mode == AntMode.TO_FOOD:
+                self.colony.add_phero(coords, phero_strength, PheroType.TO_HOME)
+            elif self.mode == AntMode.TO_HOME:
+                self.colony.add_phero(coords, phero_strength, PheroType.TO_FOOD)
+            self.last_phero_pos = self.pos
+    
+    '''Determines the random steering vector.'''
+    def handle_random_steering(self):
+        if self.target_food_pos is not None:
+            self.random_steer_force = pg.Vector2(0, 0)
+            return
+        if self.world.time > self.next_random_steer_update:
+            self.next_random_steer_update = self.world.time + random.uniform(RANDOM_STEER_UPDATE_MAX_INTERVAL / 3, RANDOM_STEER_UPDATE_MAX_INTERVAL)
+            self.random_steer_force = self.get_random_dir(self.forward_dir) * RANDOM_STEER_STRENGTH
+
+    def get_random_dir(self, reference_dir):
+        smallest_random_dir = pg.Vector2(0, 0)
+        change = -1.0
+        iterations = 4
+        for i in range(iterations):
+            random_dir = pg.Vector2(1, 0).rotate(random.random() * 360)
+            dot = reference_dir.dot(random_dir)
+            if dot > change:
+                change = dot
+                smallest_random_dir = random_dir
+        return smallest_random_dir
+    
+    def handle_food_search(self):
+        # checks a single cell for each sensor - might be better to also do this via circle sector shapes
+        map_sensor_pos_m = self.pos + self.forward_dir * MAP_SENSOR_DIST
+        map_sensor_pos_l = self.pos + self.forward_dir.rotate(-MAP_SENSOR_ANGLE) * MAP_SENSOR_DIST
+        map_sensor_pos_r = self.pos + self.forward_dir.rotate(MAP_SENSOR_ANGLE) * MAP_SENSOR_DIST
+        map_sensor_data_m = self.world.get_cell_type(map_sensor_pos_m)
+        map_sensor_data_l = self.world.get_cell_type(map_sensor_pos_l)
+        map_sensor_data_r = self.world.get_cell_type(map_sensor_pos_r)
+
+        # if very close to colony again, reset pheromone strength
+        if pg.Vector2(self.pos - self.colony.pos).magnitude_squared() < self.colony.radius ** 2:
+            self.last_phero_event_time = self.world.time
+
+        # if no food found yet, look for it
+        if self.target_food_pos is None:
+            if map_sensor_data_m == CellType.FOOD:
+                self.target_food_pos = map_sensor_pos_m.copy()
+            elif map_sensor_data_l == CellType.FOOD:
+                self.target_food_pos = map_sensor_pos_l.copy()
+            elif map_sensor_data_r == CellType.FOOD:
+                self.target_food_pos = map_sensor_pos_r.copy()
+
+        # if food targeted already, move towards it (uses the pheromone steer vector)
+        if self.target_food_pos is not None:
+            # check if targeted food still exists (it might have been depleted by another ant in the meantime)
+            if self.world.get_cell_type(self.target_food_pos) == CellType.FOOD:
+                offset_to_food = self.target_food_pos - self.pos
+                dist_to_food = offset_to_food.magnitude()
+                dir_to_food = offset_to_food / dist_to_food
+                self.phero_steer_force = dir_to_food * TARGET_STEER_STRENGTH
+                # if very close to targeted food, pick it up and return to colony
+                if dist_to_food < 5:
+                    self.mode = AntMode.TO_HOME
+                    self.next_target_steer_update = 0
+                    self.world.take_food(self.target_food_pos)
+                    self.target_food_pos = None
+                    self.start_turn_around()
+                    self.last_phero_event_time = self.world.time
+            # if targeted food has already been depleted, target other random nearby food (if there is any)
+            else:
+                self.target_food_pos = self.world.get_nearby_food_pos(self.target_food_pos, 20)
+        # if still no food found, follow pheromone trail
+        else:
+            self.handle_phero_steering()
+    
+    def handle_return_to_colony(self):
+        # if on food tile again, reset pheromone strength
+        if self.world.get_cell_type(self.pos) == CellType.FOOD:
+            self.last_phero_event_time = self.world.time
+        # if colony nearby, steer towards it
+        if self.pos.distance_to(self.colony.pos) <= 3 * self.colony.radius:
+            self.phero_steer_force = pg.Vector2(self.colony.pos - self.pos).normalize() * TARGET_STEER_STRENGTH
+            # when arriving at colony, give food to it and start searching for food again
+            if self.pos.distance_to(self.colony.pos) <= self.colony.radius:
+                self.mode = AntMode.TO_FOOD
+                self.next_target_steer_update = 0
+                self.start_turn_around()
+                self.colony.add_food()
+                self.last_phero_event_time = self.world.time
+        # if colony not nearby, follow pheromone trail
+        else:
+            self.handle_phero_steering()
+
+    def handle_phero_steering(self):
+        '''Determines the pheromone trail steering vector.'''
+        if self.world.time > self.next_target_steer_update:
+            self.phero_steer_force = pg.Vector2(0, 0)
+            self.next_target_steer_update = self.world.time + TARGET_STEER_UPDATE_INTERVAL
+
+            if USE_SIMPLE_PHERO_STEERING:
+                sector_value_l, sector_value_m, sector_value_r = self.get_phero_sector_values_simple()
+            else:
+                sector_value_l, sector_value_m, sector_value_r = self.get_phero_sector_values()
+
+            # steer towards direction of the sensor corresponding to the highest value
+            if sector_value_m >= max(sector_value_l, sector_value_r):
+                self.phero_steer_force = self.forward_dir
+            elif sector_value_l >= sector_value_r:
+                self.phero_steer_force = self.forward_dir.rotate(-PHERO_SENSOR_ANGLE)
+            elif sector_value_r > sector_value_l:
+                self.phero_steer_force = self.forward_dir.rotate(PHERO_SENSOR_ANGLE)
+            self.phero_steer_force *= PHERO_WEIGHT
+
+    def handle_obstacle_steering(self):
+        '''Determines the obstacle avoidance steering vector.'''
+        blocked_l = not self.world.is_traversable(
+            self.pos + self.forward_dir.rotate(-OBSTACLE_SPOT_ANGLE) * OBSTACLE_SPOT_DIST)
+        blocked_r = not self.world.is_traversable(
+            self.pos + self.forward_dir.rotate(OBSTACLE_SPOT_ANGLE) * OBSTACLE_SPOT_DIST)
+
+        if self.world.time > self.next_obstacle_steer_update:
+            self.obstacle_steer_force = pg.Vector2(0, 0)
+
+        if blocked_l or blocked_r:
+            if blocked_l:
+                self.obstacle_steer_force = self.forward_dir.rotate(90) * OBSTACLE_STEER_STRENGTH
+            elif blocked_r:
+                self.obstacle_steer_force = self.forward_dir.rotate(-90) * OBSTACLE_STEER_STRENGTH
+            
+            self.next_obstacle_steer_update = self.world.time + OBSTACLE_STEER_UPDATE_INTERVAL
+            if self.obstacle_steer_force.magnitude() > 0:
+                self.random_steer_force = self.obstacle_steer_force.normalize() * RANDOM_STEER_STRENGTH
+            else:
+                self.random_steer_force = pg.Vector2(0, 0)
+
+    def start_turn_around(self, random_strength=0.2):
+        '''Used when running straight into a wall or after picking up food / bringing food to the colony.'''
+        # print('start turning around')
+        return_dir = - self.forward_dir
+        self.turning_around = True
+        self.turn_around_end_time = self.world.time + 1.5
+        perp_axis = pg.Vector2(-return_dir.y, return_dir.x)
+        self.turn_around_force = return_dir + perp_axis * (random.random() - 0.5) * 2 * random_strength
+    
+    '''Computes the phero values for the left, right and center sensors using circle sector shapes for each.
+
+    The ant always faces towards the center of the middle sensor sector shape. Each sector is PHERO_SENSOR_ANGLE
+    degrees wide and the outer sensors are rotated PHERO_SENSOR_ANGLE degrees away from the middle sensor.
+    '''
+    def get_phero_sector_values(self):
+        angle = self.forward_dir.as_polar()[1]
+        values = [0, 0, 0]
+        r = PHERO_SENSOR_DIST // CELL_SIZE
+        phero_grid_vicinity = self.colony.get_phero_grid_vicinity(self.pos, r, self.mode)
+
+        if USE_PHERO_MASK_MAX_INSTEAD_OF_SUM:
+            # uses phero mask as filter for np array slice
+            values[0] = phero_grid_vicinity[Ant.phero_mask_list[int(angle - PHERO_SENSOR_ANGLE) % 360]].max()
+            values[1] = phero_grid_vicinity[Ant.phero_mask_list[int(angle) % 360]].max()
+            values[2] = phero_grid_vicinity[Ant.phero_mask_list[int(angle + PHERO_SENSOR_ANGLE) % 360]].max()
+        else:
+            # uses phero mask as filter for np array slice
+            values[0] = np.sum(phero_grid_vicinity[Ant.phero_mask_list[int(angle - PHERO_SENSOR_ANGLE) % 360]])
+            values[1] = np.sum(phero_grid_vicinity[Ant.phero_mask_list[int(angle) % 360]])
+            values[2] = np.sum(phero_grid_vicinity[Ant.phero_mask_list[int(angle + PHERO_SENSOR_ANGLE) % 360]])
+        return values
+
+    def get_phero_sector_values_simple(self):
+        '''Computes the phero values for the left, right and center sensors using single phero grid cells for each.'''
+        sensor_pos_l = self.pos + PHERO_SENSOR_DIST * self.forward_dir.rotate(- PHERO_SENSOR_ANGLE)
+        sensor_pos_m = self.pos + PHERO_SENSOR_DIST * self.forward_dir
+        sensor_pos_r = self.pos + PHERO_SENSOR_DIST * self.forward_dir.rotate(PHERO_SENSOR_ANGLE)
+
+        results = [0, 0, 0]
+        if self.world.is_in_bounds(sensor_pos_l):
+            results[0] = self.colony.get_phero_strength(self.world.pos_to_coords(sensor_pos_l), self.mode)
+        if self.world.is_in_bounds(sensor_pos_m):
+            results[1] = self.colony.get_phero_strength(self.world.pos_to_coords(sensor_pos_m), self.mode)
+        if self.world.is_in_bounds(sensor_pos_r):
+            results[2] = self.colony.get_phero_strength(self.world.pos_to_coords(sensor_pos_r), self.mode)
+        return results
+
+    # doesn't work atm
+    '''Draws visual representations of the shapes used for pheromone sensors.'''
+    def draw_debug_sensor_coords(self, screen):
+        if self.debug_sensor_coords:
+            for coords in self.debug_sensor_coords[0]:
+                s = pg.Surface((CELL_SIZE, CELL_SIZE), pg.SRCALPHA)
+                s.fill(((127, 127, 127, 80)))
+                screen.blit(s, (coords[0] * CELL_SIZE, coords[1] * CELL_SIZE))
+            for coords in self.debug_sensor_coords[1]:
+                s = pg.Surface((CELL_SIZE, CELL_SIZE), pg.SRCALPHA)
+                s.fill(((255, 255, 255, 80)))
+                screen.blit(s, (coords[0] * CELL_SIZE, coords[1] * CELL_SIZE))
+            for coords in self.debug_sensor_coords[2]:
+                s = pg.Surface((CELL_SIZE, CELL_SIZE), pg.SRCALPHA)
+                s.fill(((127, 127, 127, 80)))
+                screen.blit(s, (coords[0] * CELL_SIZE, coords[1] * CELL_SIZE))
 
     # image must be square
     @staticmethod
     def _rotate_around_center_and_crop(img, angle):
+        '''Rotates a given image around its center by a given angle, then crops the result to the original image size.
+
+        The image must be square for this to work properly.
+        '''
         img_size = img.get_rect().size
         img_rotated = pg.transform.rotate(img, angle)
         crop_offset = (img_rotated.get_rect().width - img_size[0]) // 2
         img_cropped = pg.Surface(img_size, flags=pg.SRCALPHA)
         img_cropped.blit(img_rotated, (0, 0), ((crop_offset, crop_offset), img_size))
         return img_cropped
-    
 
-# ===========================
-
-
-class PheroGrid():
-    def __init__(self, bigSize):
-        self.surfSize = (int(bigSize[0]/CELL_SIZE), int(bigSize[1]/CELL_SIZE))
-        self.image = pg.Surface(self.surfSize).convert()
-        self.img_array = np.array(pg.surfarray.array3d(self.image),dtype=float)#.astype(np.float64)
-    def update(self, dt):
-        self.img_array -= .2 * (60/FPS) * ((dt/10) * FPS) #[self.img_array > 0] # dt might not need FPS parts
-        self.img_array = self.img_array.clip(0,255)
-        pg.surfarray.blit_array(self.image, self.img_array)
-        return self.image
-
-
-class Food(pg.sprite.Sprite):
-    def __init__(self, pos):
-        super().__init__()
-        self.pos = pos
-        self.image = pg.Surface((16, 16))
-        self.image.fill(0)
-        self.image.set_colorkey(0)
-        pg.draw.circle(self.image, [20,150,2], [8, 8], 4)
-        self.rect = self.image.get_rect(center=pos)
-    def pickup(self):
-        self.kill()
-
-
-class Vec2():
-    def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
-    def vint(self):
-        return (int(self.x), int(self.y))
+    # The masks' orientation looks wrong because the numpy array orientation differs from the pygame 
+    # screen orientation
+    @staticmethod
+    def _debug_print_phero_mask(angle):
+        r = PHERO_SENSOR_DIST // CELL_SIZE
+        size = 2*r + 1
+        a = np.zeros((size, size))
+        a[Ant.phero_mask_list[angle]] = 1
+        print(np.roll(a, r, (0, 1)))
