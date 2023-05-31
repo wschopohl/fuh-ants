@@ -69,6 +69,8 @@ class EnginePygame:
             self.pgfoodclusters.draw(self.screen)
             self.pgpheromones.draw(self.screen)
             self.pgants.draw(self.screen)
+            # for ant in self.pgants:
+            #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
             renderMutex.release()
             
@@ -155,6 +157,7 @@ class PGNest(pygame.sprite.Sprite):
     def __init__(self, nest):
         pygame.sprite.Sprite.__init__(self)
         self.nest = nest
+        self.radius = Config.NestSize
         nest.setSprite(self)
         self.image = pygame.image.load(Config.NestImageFile).convert_alpha()
         self.rect = self.image.get_rect()
