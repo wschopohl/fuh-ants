@@ -49,11 +49,36 @@ class EnginePygame:
     def startRenderLoop(self):
         running = True
         render_step = 0
+
+        # Set variables for drawing position
+        x, y = 0, 0
+
+        # Start time for mouse-click event
+        click_time_start = time.time()
+
+       
+
         while running:
             render_step += 1
+
+            # check events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                # left mousebutton = food placement
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # Get mousebutton click and activate timer for foodplacement
+                    x, y = pygame.mouse.get_pos()
+                    click_time_start = time.time()
+
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    # Get mousebutton release and calc clicktime
+                    click_time_stop = time.time()
+                    click_duration = click_time_stop - click_time_start
+
+                    print(click_duration)
+                    # add food according click duration
+                    self.world.add(FoodCluster(position = (x,y), amount=(int(click_duration*300))))
 
             # self.world.update()
             
@@ -72,7 +97,10 @@ class EnginePygame:
             # for ant in self.pgants:
             #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
+            self.printDescription()
             renderMutex.release()
+
+            
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
@@ -88,6 +116,11 @@ class EnginePygame:
         text += " Pheromones: " + str(len(self.pgpheromones))
         text_surface = self.font.render(text, True, Colors.InfoText)
         self.screen.blit(text_surface, (20, 20))
+
+    def printDescription(self):
+        text = " Press + hold left mousebutton for food placement."
+        text_surface = self.font.render(text, True, Colors.Description)
+        self.screen.blit(text_surface, (20, self.world.height-20))
 
     def drawVector(self, start, end):
         pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
