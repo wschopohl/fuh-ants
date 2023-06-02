@@ -56,6 +56,13 @@ class EnginePygame:
         # Start time for mouse-click event
         click_time_start = time.time()
 
+        # Set Mousebutton type
+        LEFT = 1
+        RIGHT = 3
+
+        # Variables to track the start and end points of each line
+        lines = []
+        current_line = []
        
 
         while running:
@@ -65,20 +72,50 @@ class EnginePygame:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                # left mousebutton = food placement
+                
+
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Get mousebutton click and activate timer for foodplacement
-                    x, y = pygame.mouse.get_pos()
-                    click_time_start = time.time()
+                    # left mousebutton = food placement
+                    if event.button == LEFT:
+                        # activate timer and get mouse position
+                        x, y = pygame.mouse.get_pos()
+                        click_time_start = time.time()
+
+                    # right mousebutton = draw obstacles
+                    if event.button == RIGHT:
+                        # get mouse position and store it in current_line
+                       current_line = [pygame.mouse.get_pos()]
+                        
 
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    # Get mousebutton release and calc clicktime
-                    click_time_stop = time.time()
-                    click_duration = click_time_stop - click_time_start
+                    if event.button == LEFT:
+                        # Get mousebutton release time and calculate clickduration
+                        click_time_stop = time.time()
+                        click_duration = click_time_stop - click_time_start
 
-                    print(click_duration)
-                    # add food according click duration
-                    self.world.add(FoodCluster(position = (x,y), amount=(int(click_duration*300))))
+                        # add food according click duration
+                        # add only when mouseposition is in the mask of the map
+                                            
+                        pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
+                        touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
+
+                        if touching: break
+                        self.world.add(FoodCluster(position = (x,y), amount=(int(click_duration*300))))
+
+
+                    # right mousebutton = draw obstacles
+                    if event.button == RIGHT:
+                        current_line.append(pygame.mouse.get_pos())
+                        lines.append(current_line)
+                        current_line = []
+                        
+                       
+
+                        
+                
+
+            
+                
 
             # self.world.update()
             
@@ -98,6 +135,11 @@ class EnginePygame:
             #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
             self.printDescription()
+
+           # Draw lines 
+            for line in lines:
+                pygame.draw.line(self.screen, Colors.Nest, line[0], line[1], 2)
+
             renderMutex.release()
 
             
