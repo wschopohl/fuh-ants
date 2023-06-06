@@ -11,9 +11,9 @@ AntWallSearchAngle = 15
 
 
 # graphical configs
-NestImageFile = "assets/nest.png"
-AntImageFile = "assets/ant_small.png"
-AntViewMaskFile = "assets/ant_small_view_mask.png"
+NestImageFile = "Wieland/assets/nest.png"
+AntImageFile = "Wieland/assets/ant_small.png"
+AntViewMaskFile = "Wieland/assets/ant_small_view_mask.png"
 #AntFoodPosition = (10,10)
 AntFoodPosition = (12,9)
 AntMiddlePosition = (9,9)

@@ -49,13 +49,14 @@ class EnginePygame:
     def startRenderLoop(self):
         running = True
         render_step = 0
+        clock = pygame.time.Clock()
         while running:
             render_step += 1
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
-            # self.world.update()
+            self.world.update()
             
             self.pgants.update()
             if render_step % 5 == 0: self.pgpheromones.update()
@@ -76,7 +77,8 @@ class EnginePygame:
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
-            time.sleep(Config.AntSleepTime)
+            #time.sleep(Config.AntSleepTime)
+            clock.tick(120)
 
         self.world.stop()
         pygame.quit()
