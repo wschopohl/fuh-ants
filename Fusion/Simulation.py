@@ -18,9 +18,10 @@ def change_array(shm_info, row):
 
     shm = SharedMemory(name=shm_info['name'], create=False)
     arr = np.ndarray(shm_info['shape'], dtype=shm_info['dtype'], buffer=shm.buf)
+    arr = arr.view(dtype=np.uint8).reshape((*arr.shape[0:2], 4))
 
     for i in range(800):
-        arr[i][row] = [0,0,0]
+        arr[i][row] = (0,0,255,0)
         time.sleep(0.01)
 
 
