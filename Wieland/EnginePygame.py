@@ -100,7 +100,12 @@ class EnginePygame:
                         touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
 
                         if touching: break
-                        self.world.add(FoodCluster(position = (x,y), amount=(int(click_duration*300))))
+                        
+                        if (int(click_duration*300)) > Config.MaxFoodSize:
+                            self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxFoodSize))))
+
+                        else:
+                            self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
 
 
                     # right mousebutton = draw obstacles
