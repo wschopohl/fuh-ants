@@ -4,6 +4,7 @@ from Nest import Nest
 from FoodCluster import FoodCluster
 from Pheromone import Pheromone
 from Map import Map
+from CollisionPygame import CollisionPygame
 import Colors
 import Config
 
@@ -29,6 +30,7 @@ class EnginePygame:
         self.pgmap = None
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.collision = CollisionPygame()
 
     def add(self, object):
         if type(object) is Ant:
@@ -145,6 +147,10 @@ class EnginePygame:
             for line in lines:
                 pygame.draw.line(self.screen, Colors.Nest, line[0], line[1], 2)
 
+            for line in lines:
+                if self.collision.checkCollision(line, self.pgants):
+                    print("Ant collided with line!")
+           
             renderMutex.release()
 
             
