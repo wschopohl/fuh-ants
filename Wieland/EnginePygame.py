@@ -65,6 +65,8 @@ class EnginePygame:
         # Variables to track the start and end points of each line
         lines = []
         current_line = []
+
+        threshold = 20  # Adjust the threshold for line deletion
        
 
         while running:
@@ -87,6 +89,21 @@ class EnginePygame:
                     if event.button == RIGHT:
                         # get mouse position and store it in current_line
                        current_line = [pygame.mouse.get_pos()]
+
+                # Check if "d" is pressed
+                elif pygame.key.get_pressed()[pygame.K_d]:
+                    
+                    # Get the mouse position
+                    mouse_pos = pygame.mouse.get_pos()
+                  
+                    for line in lines:
+                        # Check if only one point of the mouse is near the line
+                        distance = abs((line[1][1] - line[0][1]) * mouse_pos[0] - (line[1][0] - line[0][0]) * mouse_pos[1] + line[1][0] * line[0][1] - line[1][1] * line[0][0]) / ((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) ** 0.5
+
+                        
+                        if distance < threshold:
+                            # Remove the line from the list
+                            lines.remove(line)
    
                         
 
@@ -116,6 +133,8 @@ class EnginePygame:
                         current_line.append(pygame.mouse.get_pos())
                         lines.append(current_line)
                         current_line = []
+
+                    
                         
                        
 
@@ -166,12 +185,15 @@ class EnginePygame:
     def printDescription(self):
         text = " Press + hold left mousebutton for food placement."
         text2 = " Press + hold right mousebutton for wall placement."
+        text3 = " Point with mouse + press \"d\" for deleting walls."
 
         text_surface = self.font.render(text, True, Colors.Description)
         text_surface2 = self.font.render(text2, True, Colors.Description)
+        text_surface3 = self.font.render(text3, True, Colors.Description)
 
         self.screen.blit(text_surface, (20, self.world.height-20))
         self.screen.blit(text_surface2, (20, self.world.height-40))
+        self.screen.blit(text_surface3, (20, self.world.height-60))
 
         
 
