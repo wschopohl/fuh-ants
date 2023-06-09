@@ -87,6 +87,7 @@ class EnginePygame:
                     if event.button == RIGHT:
                         # get mouse position and store it in current_line
                        current_line = [pygame.mouse.get_pos()]
+   
                         
 
                 elif event.type == pygame.MOUSEBUTTONUP:
@@ -142,10 +143,6 @@ class EnginePygame:
             #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
             self.printDescription()
-
-            #for line in lines:
-            #    if self.collision.checkCollision(line, self.pgants):
-            #        print("Ant collided with line!")
            
             renderMutex.release()
 
@@ -168,8 +165,15 @@ class EnginePygame:
 
     def printDescription(self):
         text = " Press + hold left mousebutton for food placement."
+        text2 = " Press + hold right mousebutton for wall placement."
+
         text_surface = self.font.render(text, True, Colors.Description)
+        text_surface2 = self.font.render(text2, True, Colors.Description)
+
         self.screen.blit(text_surface, (20, self.world.height-20))
+        self.screen.blit(text_surface2, (20, self.world.height-40))
+
+        
 
     def drawVector(self, start, end):
         pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
@@ -308,11 +312,19 @@ class PGMap(pygame.sprite.Sprite):
     def update(self):
         pass
 
+
     def draw(self, screen, lines):
+        mask_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        mask_surface.blit(self.image, self.rect)
+
         for line in lines:
-            pygame.draw.line(screen, Colors.Nest, line[0], line[1], 2)
-        #self.mask = pygame.mask.from_surface(screen.copy().convert_alpha())
-        screen.blit(self.image, self.rect)
+            pygame.draw.line(mask_surface, Colors.Nest, line[0], line[1], 2)
+
+        self.mask = pygame.mask.from_surface(mask_surface)
+
+        screen.blit(mask_surface, self.rect)
+
+   
 
 
         
