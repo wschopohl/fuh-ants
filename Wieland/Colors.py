@@ -3,6 +3,7 @@
 from Pheromone import Type as PheromoneType
 
 Background = (220, 220, 220)
+Black = (0, 0, 0)
 Nest = (92,22,9)
 Ant = (135,62,35)
 FoodCluster = (121,169,25)

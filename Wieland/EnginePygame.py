@@ -318,7 +318,7 @@ class PGMap(pygame.sprite.Sprite):
         mask_surface.blit(self.image, self.rect)
 
         for line in lines:
-            pygame.draw.line(mask_surface, Colors.Nest, line[0], line[1], 2)
+            pygame.draw.line(mask_surface, Colors.Black, line[0], line[1], 2)
 
         self.mask = pygame.mask.from_surface(mask_surface)
 
