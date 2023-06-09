@@ -2,12 +2,12 @@ import pygame
 from Ant import Ant
 from Nest import Nest
 from FoodCluster import FoodCluster
-from Pheromone import Pheromone, Type as PheromoneType
+from Pheromone import Pheromone
 from Map import Map
+from CollisionPygame import CollisionPygame
 import Colors
 import Config
 
-import math
 import threading
 import time
 
@@ -30,6 +30,7 @@ class EnginePygame:
         self.pgmap = None
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.collision = CollisionPygame()
 
     def add(self, object):
         if type(object) is Ant:
@@ -50,11 +51,78 @@ class EnginePygame:
     def startRenderLoop(self):
         running = True
         render_step = 0
+
+        # Set variables for drawing position
+        x, y = 0, 0
+
+        # Start time for mouse-click event
+        click_time_start = time.time()
+
+        # Set Mousebutton type
+        LEFT = 1
+        RIGHT = 3
+
+        # Variables to track the start and end points of each line
+        lines = []
+        current_line = []
+       
+
         while running:
             render_step += 1
+
+            # check events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                
+
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # left mousebutton = food placement
+                    if event.button == LEFT:
+                        # activate timer and get mouse position
+                        x, y = pygame.mouse.get_pos()
+                        click_time_start = time.time()
+
+                    # right mousebutton = draw obstacles
+                    if event.button == RIGHT:
+                        # get mouse position and store it in current_line
+                       current_line = [pygame.mouse.get_pos()]
+                        
+
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == LEFT:
+                        # Get mousebutton release time and calculate clickduration
+                        click_time_stop = time.time()
+                        click_duration = click_time_stop - click_time_start
+
+                        # add food according click duration
+                        # add only when mouseposition is in the mask of the map
+                                            
+                        pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
+                        touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
+
+                        if touching: break
+                        
+                        if (int(click_duration*300)) > Config.MaxFoodSize:
+                            self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxFoodSize))))
+
+                        else:
+                            self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+
+
+                    # right mousebutton = draw obstacles
+                    if event.button == RIGHT:
+                        current_line.append(pygame.mouse.get_pos())
+                        lines.append(current_line)
+                        current_line = []
+                        
+                       
+
+                        
+                
+
+            
+                
 
             # self.world.update()
             
@@ -70,8 +138,22 @@ class EnginePygame:
             self.pgfoodclusters.draw(self.screen)
             self.pgpheromones.draw(self.screen)
             self.pgants.draw(self.screen)
+            # for ant in self.pgants:
+            #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
+            self.printDescription()
+
+           # Draw lines 
+            for line in lines:
+                pygame.draw.line(self.screen, Colors.Nest, line[0], line[1], 2)
+
+            for line in lines:
+                if self.collision.checkCollision(line, self.pgants):
+                    print("Ant collided with line!")
+           
             renderMutex.release()
+
+            
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
@@ -87,6 +169,11 @@ class EnginePygame:
         text += " Pheromones: " + str(len(self.pgpheromones))
         text_surface = self.font.render(text, True, Colors.InfoText)
         self.screen.blit(text_surface, (20, 20))
+
+    def printDescription(self):
+        text = " Press + hold left mousebutton for food placement."
+        text_surface = self.font.render(text, True, Colors.Description)
+        self.screen.blit(text_surface, (20, self.world.height-20))
 
     def drawVector(self, start, end):
         pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
@@ -143,10 +230,10 @@ class PGAnt(pygame.sprite.Sprite):
         self.middle = PGAnt.middle_offset.rotate(self.ant.direction)
         renderMutex.release()
 
-    def collision(self, map):
+    def collision(self, map_obj):
         self.update()
         try:
-            answer = self.mask.overlap(map.mask, (-self.rect.x, -self.rect.y)) != None
+            answer = self.mask.overlap(map_obj.mask, (-self.rect.x, -self.rect.y)) is not None
             return answer
         except AttributeError:
             return False
@@ -156,6 +243,7 @@ class PGNest(pygame.sprite.Sprite):
     def __init__(self, nest):
         pygame.sprite.Sprite.__init__(self)
         self.nest = nest
+        self.radius = Config.NestSize
         nest.setSprite(self)
         self.image = pygame.image.load(Config.NestImageFile).convert_alpha()
         self.rect = self.image.get_rect()
@@ -187,7 +275,8 @@ class PGPheromone(pygame.sprite.Sprite):
     
     @classmethod
     def loadImages(cls):
-        if PGPheromone.pheromone_images != {}: return
+        if PGPheromone.pheromone_images:
+            return
         for color in Colors.PheromoneColors:
             tmp_image = pygame.Surface((Config.PheromoneSize*2, Config.PheromoneSize*2), pygame.SRCALPHA)   # per-pixel alpha
             pygame.draw.circle(tmp_image, Colors.PheromoneColors[color], (Config.PheromoneSize, Config.PheromoneSize), Config.PheromoneSize)
@@ -214,11 +303,14 @@ class PGPheromone(pygame.sprite.Sprite):
         self.kill()
 
 class PGMap(pygame.sprite.Sprite):
-    def __init__(self, map):
-        self.image = pygame.image.load(map.image).convert_alpha()
+    def __init__(self, map_obj):
+        self.image = pygame.image.load(map_obj.image).convert_alpha()
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        map.setSprite(self)
+        map_obj.setSprite(self)
+
+    def update(self):
+        pass
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)

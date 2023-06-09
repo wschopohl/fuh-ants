@@ -109,7 +109,8 @@ class Ant:
         # if near to nest ignore pheromones and go directly in direction of nest
         if pheromone_type == Type.HOME:
             dnest = calculate_distance(self.position, self.nest.position)
-            if dnest <= Config.AntSenseRadius:
+            # print(self.nest.radius)
+            if dnest <= Config.AntSenseRadius + Config.NestSize:
                 return fast_angle(self.position[0] - self.nest.position[0], self.position[1] - self.nest.position[1])
             
         # if near to food ignore pheromones and go directly in direction of food
@@ -117,13 +118,13 @@ class Ant:
             for foodcluster in self.nest.world.foodclusters:
                 if foodcluster.amount <= 0: continue
                 dfood = calculate_distance(self.position, foodcluster.position)
-                if dfood <= Config.AntSenseRadius:
+                if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
         
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
         angle = self.calculate_pheromone_vector(near_pheromones)
-
+    
         return angle
 
     def calculate_pheromone_vector(self, pheromones):

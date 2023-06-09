@@ -26,3 +26,6 @@ PheromoneSize = 2
 PheromoneDecay = 0.001
 PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15
+
+# The maximum food size that can be placed per mouse click (interaction) is defined as follows 
+MaxFoodSize = 200

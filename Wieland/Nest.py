@@ -2,10 +2,9 @@ import threading
 import time
 
 from Ant import Ant
-import Const
 
 class Nest:    
-    def __init__(self, position=(100,100), spawn_rate=1, max_ants=Const.Unlimited):
+    def __init__(self, position=(100,100), spawn_rate=1, max_ants=100):
         self.position = position
         self.spawn_rate = spawn_rate
         self.max_ants = max_ants
