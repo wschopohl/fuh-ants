@@ -3,12 +3,7 @@ from World import World
 from Nest import Nest
 from FoodCluster import FoodCluster
 from EnginePygame import EnginePygame
-<<<<<<< HEAD
-import Const
-import random
-=======
 from Map import Map
->>>>>>> 4382748cd3c6df49c4959e79250d10331fc5d6d4
 
 def main():
     scene = 1
@@ -53,14 +48,10 @@ def main():
         world.add(Nest(position = (90,100), spawn_rate=20, max_ants = 100))
         world.add(FoodCluster(position = (700,363), amount=1000))
 
-<<<<<<< HEAD
     world.add(Nest(position = (600,400), spawn_rate=50, max_ants = 100))
     
     for i in range(4):
         world.add(FoodCluster(position = (random.randint(0,engine.screen.get_width()),random.randint(0,engine.screen.get_height())), amount=1000))
-
-=======
->>>>>>> 4382748cd3c6df49c4959e79250d10331fc5d6d4
 
     world.run()
     engine.startRenderLoop()  # sync call, execution waits here
