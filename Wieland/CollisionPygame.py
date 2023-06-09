@@ -43,15 +43,15 @@ class CollisionPygame():
     
     
 
-    def checkCollision(self, line, pgants):
-        for ant in pgants:
-            if self.lineRectCollision(line, ant.rect):
-                return True
-        return False
+    #def checkCollision(self, line, pgants):
+    #    for ant in pgants:
+    #        if self.lineRectCollision(line, ant.rect):
+    #            return True
+    #    return False
 
-    def lineRectCollision(self, line, rect):
-        line_rect = pygame.Rect(line[0][0], line[0][1], line[1][0] - line[0][0], line[1][1] - line[0][1])
-        if line_rect.colliderect(rect):
-            return True
-        return False
+    #def lineRectCollision(self, line, rect):
+    #    line_rect = pygame.Rect(line[0][0], line[0][1], line[1][0] - line[0][0], line[1][1] - line[0][1])
+    #    if line_rect.colliderect(rect):
+    #        return True
+    #    return False
 

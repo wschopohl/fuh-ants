@@ -132,7 +132,7 @@ class EnginePygame:
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
-            if self.pgmap != None: self.pgmap.draw(self.screen)
+            if self.pgmap != None: self.pgmap.draw(self.screen, lines)
             # self.screen.blit(self.debug_surface, (0,0))
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
@@ -143,13 +143,9 @@ class EnginePygame:
             self.printNestStats()
             self.printDescription()
 
-           # Draw lines 
-            for line in lines:
-                pygame.draw.line(self.screen, Colors.Nest, line[0], line[1], 2)
-
-            for line in lines:
-                if self.collision.checkCollision(line, self.pgants):
-                    print("Ant collided with line!")
+            #for line in lines:
+            #    if self.collision.checkCollision(line, self.pgants):
+            #        print("Ant collided with line!")
            
             renderMutex.release()
 
@@ -312,5 +308,11 @@ class PGMap(pygame.sprite.Sprite):
     def update(self):
         pass
 
-    def draw(self, screen):
+    def draw(self, screen, lines):
+        for line in lines:
+            pygame.draw.line(screen, Colors.Nest, line[0], line[1], 2)
+        #self.mask = pygame.mask.from_surface(screen.copy().convert_alpha())
         screen.blit(self.image, self.rect)
+
+
+        
