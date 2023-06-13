@@ -29,8 +29,8 @@ class Ant:
         self.pheromone_intensity -= (Config.PheromoneDecay * Config.PheromoneDistanceReduce)
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
-        # self.randomChangeDirection()
-        self.randomChangeDirection_modified()
+        # self.randomChangeDirection_unmodified()
+        self.randomChangeDirection()
         self.dropPheromone()
 
     def turnaround(self):
@@ -61,7 +61,7 @@ class Ant:
         pheromnoe_type = Type.HOME if self.carry_food == 0 else Type.FOOD
         self.nest.world.add(Pheromone(self.position, pheromnoe_type, self.pheromone_intensity))
 
-    def randomChangeDirection(self):
+    def randomChangeDirection_unmodified(self):
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
             self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
@@ -77,7 +77,7 @@ class Ant:
         self.calculateMoveVectors()
         if self.sprite != None: self.sprite.updateImage()
     
-    def randomChangeDirection_modified(self):
+    def randomChangeDirection(self):
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
             self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
@@ -143,11 +143,12 @@ class Ant:
         
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
+        # angle = self.calculate_pheromone_vector_unmodified(near_pheromones)
         angle = self.calculate_pheromone_vector(near_pheromones)
     
         return angle
 
-    def calculate_pheromone_vector(self, pheromones):
+    def calculate_pheromone_vector_unmodified(self, pheromones):
         if len(pheromones) == 0: return None
 
         vector = {'x': 0, 'y': 0}
@@ -168,7 +169,41 @@ class Ant:
 
         if vector['x'] == 0 == vector['y']: return None
         return fast_angle(vector['x'], vector['y'])
+    
+    # slices the total field of view into three equal circle sectors and returns an angle pointing towards the 
+    # center of the sector containing the highest total pheromone intensity
+    def calculate_pheromone_vector(self, pheromones):
+        if len(pheromones) == 0: return None
 
+        # vector = {'x': 0, 'y': 0}
+        score_middle, score_left, score_right = 0, 0, 0
+        for p in pheromones:
+            dx = self.position[0] - p.position[0]
+            dy = self.position[1] - p.position[1]
+            length = math.sqrt(dx*dx + dy*dy)
+            if length <= Config.AntSenseRadius:
+                angle = fast_angle(dx, dy)
+                if angle is None:
+                    continue
+                angle_delta = (angle - self.direction) % 360
+                # middle sensor
+                if angle_delta <= 1/3 * Config.AntFieldOfView or angle_delta >= 360 - 1/3 * Config.AntFieldOfView:
+                    score_middle += p.intensity
+                # left sensor
+                elif angle_delta < 360 - 1/3 * Config.AntFieldOfView and angle_delta >= 360 - Config.AntFieldOfView:
+                    score_left += p.intensity
+                # right sensor
+                elif angle_delta > 1/3 * Config.AntFieldOfView and angle_delta <= Config.AntFieldOfView:
+                    score_right += p.intensity
+        
+        if score_middle + score_left + score_right <= 0:
+            return None
+        elif score_middle >= score_left and score_middle >= score_right:
+            return self.direction
+        elif score_left >= score_right:
+            return (self.direction - 2/3 * Config.AntFieldOfView) % 360
+        else:
+            return (self.direction + 2/3 * Config.AntFieldOfView) % 360
 
 def calculate_distance(p1, p2):
     dx = p1[0] - p2[0]
