@@ -1,16 +1,24 @@
 import Render
 import Simulation
 
+import faulthandler
+
+faulthandler.enable()
+
 def main():
-    shm, shm_info = Render.get_memory('assets/map_decision_equal.png')
-    render_process = Render.start_process(shm_info)
+    render_info = Render.setup('assets/map_decision_equal.png')
+    simulation_info = Simulation.setup(render_info)
+    print(render_info)
+    #print(simulation_info)
     
-    simulation_processes = Simulation.start_process(shm_info)
+    render_process = Render.start_process(render_info)
+    simulation_processes = Simulation.start_process(render_info['overlay-shm'])
     
     Simulation.join(simulation_processes)
     render_process.join()
     
-    Render.close(shm)
+    Simulation.close(simulation_info)
+    Render.close(render_info)
 
 if __name__ == '__main__':
     main()

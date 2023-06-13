@@ -1,45 +1,45 @@
+import sys
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'True'
 import pygame
-import pygame.surfarray as surfarray
+
 from multiprocessing import Process, current_process
-from multiprocessing.shared_memory import SharedMemory
+import SharedArray
 import numpy as np
 import time
 
-render_params = {'shm_name':'', }
 
-def get_memory(map_file):
+def setup(map_file):
+    print((np.uint8))
     map_surface = pygame.image.load(map_file)
-    rgbarray = pygame.surfarray.array2d(map_surface)
+    dynamic_overlay_surface = pygame.Surface(map_surface.get_size(), pygame.SRCALPHA)
     
-    shm = SharedMemory(create=True, size=rgbarray.nbytes)
-    arr = np.ndarray(rgbarray.shape, dtype=rgbarray.dtype, buffer=shm.buf)
-    print(type(rgbarray), type(arr))
-    arr[:] = rgbarray[:]
-    shm_info = {'name':shm.name, 'dtype':rgbarray.dtype, 'shape':rgbarray.shape, 'nbytes':rgbarray.nbytes,
-        'width':map_surface.get_width(),'height':map_surface.get_height()}
-    print(shm_info)
-    return shm, shm_info
+    shn, arr, info = SharedArray.create_from_surface(dynamic_overlay_surface)
 
-def start_process(shm_info):
-    process = Process(target=render_process, args=(shm_info,))
+    render_info = {}
+    render_info['map'] = {'file':map_file, 'width':map_surface.get_width(), 'height':map_surface.get_height()}
+    render_info['overlay-shm'] = info
+        
+    return render_info
+
+def start_process(render_info):
+    process = Process(target=render_process, args=(render_info,))
     process.start()
     return process
     
-def render_process(shm_info):
+def render_process(render_info):
     curr_proc = current_process()
     print("Rendering: ", curr_proc.name)
 
-    screen = pygame.display.set_mode([shm_info['width'], shm_info['height']])
+    screen = pygame.display.set_mode([render_info['map']['width'], render_info['map']['height']])
+    map_surface = pygame.image.load(render_info['map']['file'])
     main_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
     
     pygame.display.set_caption("MAS Fusion")
     pygame.font.init()
 
-    shm = SharedMemory(name=shm_info['name'], create=False)
-    arr = np.ndarray(shm_info['shape'], dtype=shm_info['dtype'], buffer=shm.buf)
-    
+    shm, arr = SharedArray.get_array(render_info['overlay-shm'])
+
     font = pygame.font.Font('freesansbold.ttf', 32)   
     render_time_average = 0
     average_counter = 0
@@ -54,6 +54,7 @@ def render_process(shm_info):
                 running = False
         
         screen.fill((0,255,0))
+        screen.blit(map_surface, (0,0))
 
         if direct_array_blit:
             pygame.surfarray.blit_array(main_surface, arr)
@@ -73,8 +74,7 @@ def render_process(shm_info):
         time.sleep(0.04)
     
 
-def close(shm):
-    shm.close()
-    shm.unlink()
+def close(render_info):
+    SharedArray.close(render_info['overlay-shm'])
     
     
