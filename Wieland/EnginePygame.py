@@ -65,6 +65,8 @@ class EnginePygame:
         # Variables to track the start and end points of each line
         lines = []
         current_line = []
+
+        threshold = 20  # Adjust the threshold for line deletion
        
 
         while running:
@@ -87,6 +89,22 @@ class EnginePygame:
                     if event.button == RIGHT:
                         # get mouse position and store it in current_line
                        current_line = [pygame.mouse.get_pos()]
+
+                # Check if "d" is pressed
+                elif pygame.key.get_pressed()[pygame.K_d]:
+                    
+                    # Get the mouse position
+                    mouse_pos = pygame.mouse.get_pos()
+                  
+                    for line in lines:
+                        # Check if only one point of the mouse is near the line
+                        distance = abs((line[1][1] - line[0][1]) * mouse_pos[0] - (line[1][0] - line[0][0]) * mouse_pos[1] + line[1][0] * line[0][1] - line[1][1] * line[0][0]) / ((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) ** 0.5
+
+                        
+                        if distance < threshold:
+                            # Remove the line from the list
+                            lines.remove(line)
+   
                         
 
                 elif event.type == pygame.MOUSEBUTTONUP:
@@ -103,8 +121,8 @@ class EnginePygame:
 
                         if touching: break
                         
-                        if (int(click_duration*300)) > Config.MaxFoodSize:
-                            self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxFoodSize))))
+                        if (int(click_duration*300)) > Config.MaxUserFoodSize:
+                            self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxUserFoodSize))))
 
                         else:
                             self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
@@ -115,13 +133,6 @@ class EnginePygame:
                         current_line.append(pygame.mouse.get_pos())
                         lines.append(current_line)
                         current_line = []
-                        
-                       
-
-                        
-                
-
-            
                 
 
             # self.world.update()
@@ -132,7 +143,8 @@ class EnginePygame:
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
-            if self.pgmap != None: self.pgmap.draw(self.screen)
+            # TODO: Maybe optimize to not draw the lines every time
+            if self.pgmap != None: self.pgmap.draw(self.screen, lines)
             # self.screen.blit(self.debug_surface, (0,0))
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
@@ -142,14 +154,6 @@ class EnginePygame:
             #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
             self.printDescription()
-
-           # Draw lines 
-            for line in lines:
-                pygame.draw.line(self.screen, Colors.Nest, line[0], line[1], 2)
-
-            for line in lines:
-                if self.collision.checkCollision(line, self.pgants):
-                    print("Ant collided with line!")
            
             renderMutex.release()
 
@@ -172,8 +176,18 @@ class EnginePygame:
 
     def printDescription(self):
         text = " Press + hold left mousebutton for food placement."
+        text2 = " Press + hold right mousebutton for wall placement."
+        text3 = " Point with mouse + press \"d\" for deleting walls."
+
         text_surface = self.font.render(text, True, Colors.Description)
+        text_surface2 = self.font.render(text2, True, Colors.Description)
+        text_surface3 = self.font.render(text3, True, Colors.Description)
+
         self.screen.blit(text_surface, (20, self.world.height-20))
+        self.screen.blit(text_surface2, (20, self.world.height-40))
+        self.screen.blit(text_surface3, (20, self.world.height-60))
+
+        
 
     def drawVector(self, start, end):
         pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
@@ -312,5 +326,19 @@ class PGMap(pygame.sprite.Sprite):
     def update(self):
         pass
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+
+    def draw(self, screen, lines):
+        mask_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        mask_surface.blit(self.image, self.rect)
+
+        for line in lines:
+            pygame.draw.line(mask_surface, Colors.UserLine, line[0], line[1], 2)
+
+        self.mask = pygame.mask.from_surface(mask_surface)
+
+        screen.blit(mask_surface, self.rect)
+
+   
+
+
+        
