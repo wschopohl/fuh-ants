@@ -69,6 +69,7 @@ class EnginePygame:
         threshold = 20  # Adjust the threshold for line deletion
        
 
+        clock = pygame.time.Clock()
         while running:
             render_step += 1
 
@@ -135,7 +136,7 @@ class EnginePygame:
                         current_line = []
                 
 
-            # self.world.update()
+            if not Config.UseThreading: self.world.update()
             
             self.pgants.update()
             if render_step % 5 == 0: self.pgpheromones.update()
@@ -161,9 +162,10 @@ class EnginePygame:
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
-            time.sleep(Config.AntSleepTime)
+            if Config.UseThreading: time.sleep(Config.AntSleepTime)
+            else: clock.tick(120)
 
-        self.world.stop()
+        if Config.UseThreading: self.world.stop()
         pygame.quit()
 
     def printNestStats(self):
