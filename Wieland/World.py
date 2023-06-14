@@ -58,9 +58,9 @@ class World:
         for nest in self.nests:
             nest.run()
 
-        #ThreadHelper.start("ants", self.antLoop)
-        #ThreadHelper.start("collisions", self.collisionLoop)
-        #ThreadHelper.start("pheromones", self.pheromoneLoop)
+        ThreadHelper.start("ants", self.antLoop)
+        ThreadHelper.start("collisions", self.collisionLoop)
+        ThreadHelper.start("pheromones", self.pheromoneLoop)
 
     def update(self):
         for nest in self.nests: nest.update()

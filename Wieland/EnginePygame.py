@@ -56,7 +56,7 @@ class EnginePygame:
                 if event.type == pygame.QUIT:
                     running = False
 
-            self.world.update()
+            if not Config.UseThreading: self.world.update()
             
             self.pgants.update()
             if render_step % 5 == 0: self.pgpheromones.update()
@@ -77,8 +77,8 @@ class EnginePygame:
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
-            #time.sleep(Config.AntSleepTime)
-            clock.tick(120)
+            if Config.UseThreading: time.sleep(Config.AntSleepTime)
+            else: clock.tick(120)
 
         self.world.stop()
         pygame.quit()

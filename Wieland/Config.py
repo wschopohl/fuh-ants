@@ -11,9 +11,9 @@ AntWallSearchAngle = 15
 
 
 # graphical configs
-NestImageFile = "Wieland/assets/nest.png"
-AntImageFile = "Wieland/assets/ant_small.png"
-AntViewMaskFile = "Wieland/assets/ant_small_view_mask.png"
+NestImageFile = "assets/nest.png"
+AntImageFile = "assets/ant_small.png"
+AntViewMaskFile = "assets/ant_small_view_mask.png"
 #AntFoodPosition = (10,10)
 AntFoodPosition = (12,9)
 AntMiddlePosition = (9,9)
@@ -26,3 +26,5 @@ PheromoneSize = 2
 PheromoneDecay = 0.001
 PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15
+
+UseThreading = True
