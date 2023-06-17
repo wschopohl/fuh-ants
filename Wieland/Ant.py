@@ -140,7 +140,9 @@ class Ant:
                 dfood = calculate_distance(self.position, foodcluster.position)
                 if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
-        
+        if Config.UseNumpy:
+            self.nest.world.pheromoneMap.numpy_sensor(self.position,self.direction,pheromone_type.value)
+
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
         # angle = self.calculate_pheromone_vector_unmodified(near_pheromones)
