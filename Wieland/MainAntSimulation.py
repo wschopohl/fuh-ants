@@ -4,10 +4,18 @@ from Nest import Nest
 from FoodCluster import FoodCluster
 from EnginePygame import EnginePygame
 from Map import Map
+from os import chdir
+from socket import gethostname
 import Config
 
 def main():
     scene = 1
+    
+    # change directory für meinen Laptop damit ich die assets finde, bekomme es anders gerade nicht hin, ohne staendiges aendern der filenames
+    if gethostname() == 'Jo_Schenk_21':
+        print('host found')
+        chdir('Wieland/')
+    
     if len(sys.argv) == 1:
         print((" +++ You can load different scenes +++ "))
         print((" +++ python MainAntSimulation.py [num] +++ "))

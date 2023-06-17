@@ -1,6 +1,7 @@
 import Config
 import math
 from Pheromone import Type
+import numpy as np
 
 class PheromoneMap:
     def __init__(self, world):
@@ -8,8 +9,18 @@ class PheromoneMap:
         self.width = math.ceil(world.width / Config.PheromoneMapTileSize)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSize)
         self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(2)]
+        if Config.UseNumpy:
+            self.phero_map = np.zeros((world.width,world.height,2))
+
+
 
     def add(self, pheromone):
+        
+        #numpy
+        if Config.UseNumpy:
+            x,y = pheromone.position
+            self.phero_map[math.floor(pheromone.position[0]),math.floor(pheromone.position[0]),pheromone.type] += pheromone.intensity
+        #old
         x,y = self.getMapCoordinates(pheromone.position)
         if x >= self.width or y >= self.height: return False
         if x < 0 or y < 0: return False
@@ -20,9 +31,19 @@ class PheromoneMap:
         return False
     
     def remove(self, pheromone):
+        #numpy
+        if Config.UseNumpy:
+            x,y = pheromone.position
+            self.phero_map[math.floor(pheromone.position[0]),math.floor(pheromone.position[0]),pheromone.type] = 0
+        #old
         x,y = self.getMapCoordinates(pheromone.position)
         self.map[pheromone.type][y][x] = None
+    def update(self):
+        if Config.UseNumpy:
+            self.phero_map -= Config.PheromoneDecay
+            self.phero_map.clip(min=0)
 
+    
     def adjustPheromone(self, existing_pheromone, new_pheromone):
         ifactor = (new_pheromone.intensity / (new_pheromone.intensity + existing_pheromone.intensity))
         dx = (new_pheromone.position[0] - existing_pheromone.position[0]) * ifactor
@@ -50,3 +71,8 @@ class PheromoneMap:
                 if(self.map[type][my][mx] != None):
                     pheromones.append(self.map[type][my][mx])
         return pheromones
+    
+    def numpy_sensor(self,position,radius,old_angle):
+        #numpy
+        x,y = position
+        vow = self.phero_map[int(x-radius):int(x+radius),int(y-radius):int(y+radius),type]

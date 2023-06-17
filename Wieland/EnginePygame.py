@@ -132,7 +132,9 @@ class EnginePygame:
                     # right mousebutton = draw obstacles
                     if event.button == RIGHT:
                         current_line.append(pygame.mouse.get_pos())
-                        lines.append(current_line)
+                        #lines of length 0 crash when beeing deleted
+                        if (current_line[1][1] - current_line[0][1]) ** 2 + (current_line[1][0] - current_line[0][0]) >0:
+                            lines.append(current_line)                        
                         current_line = []
                 
 
