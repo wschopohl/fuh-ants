@@ -29,8 +29,8 @@ class Ant:
         self.pheromone_intensity -= (Config.PheromoneDecay * Config.PheromoneDistanceReduce)
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
-        # self.randomChangeDirection_unmodified()
-        self.randomChangeDirection()
+        self.randomChangeDirection_unmodified()
+        #self.randomChangeDirection()
         self.dropPheromone()
 
     def turnaround(self):
@@ -141,7 +141,7 @@ class Ant:
                 if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
         if Config.UseNumpy:
-            self.nest.world.pheromoneMap.numpy_sensor(self.position,self.direction,pheromone_type.value)
+            return self.nest.world.pheromoneMap.numpy_sensor(self.position,self.direction,pheromone_type.value)
 
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 

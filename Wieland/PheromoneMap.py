@@ -3,21 +3,27 @@ import math
 from Pheromone import Type
 import numpy as np
 
+
 class PheromoneMap:
     def __init__(self, world):
         self.world = world
         self.width = math.ceil(world.width / Config.PheromoneMapTileSize)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSize)
         self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(2)]
+        self.radius = 90
         if Config.UseNumpy:
 
             self.phero_map = np.zeros((world.width,world.height,2))
-            self.sens_weight = np.zeros((2*Config.AntSenseRadius+1,2*Config.AntSenseRadius+1,2))
+            self.sens_weight = np.zeros((2*self.radius+1,2*self.radius+1,2))
             #self.sens
             for x in range(self.sens_weight.shape[0]):
                 for y in range(self.sens_weight.shape[1]):
-                    self.sens_weight[x,y,0] = ((x-Config.AntSenseRadius)**2+(y-Config.AntSenseRadius)**2)**0.5/Config.AntSenseRadius
-                    self.sens_weight[x,y,1] = np.arctan2((y-Config.AntSenseRadius),(x-Config.AntSenseRadius))/np.pi*180
+                    if x==y==self.radius:
+                        self.sens_weight[x,y,0] = 1
+                        self.sens_weight[x,y,1] = 0
+                    else:
+                        self.sens_weight[x,y,0] = 1/((self.radius-x)**2+(y-self.radius)**2)**0.5
+                        self.sens_weight[x,y,1] = np.arctan2(-(y-self.radius),(x-self.radius))/np.pi*180
             
             # sensor_res = 36
             # self.sens_mask = np.zeros((2*Config.AntSenseRadius+1,2*Config.AntSenseRadius+1,sensor_res))
@@ -55,8 +61,8 @@ class PheromoneMap:
         self.map[pheromone.type][y][x] = None
     def update(self):
         if Config.UseNumpy:
-            self.phero_map -= Config.PheromoneDecay
-            self.phero_map.clip(min=0)
+            self.phero_map -= Config.PheromoneDecay/10
+            self.phero_map = self.phero_map.clip(min=0)
 
     
     def adjustPheromone(self, existing_pheromone, new_pheromone):
@@ -89,8 +95,53 @@ class PheromoneMap:
     
     def numpy_sensor(self,position,old_angle,type):
         #numpy
-        radius = Config.AntSenseRadius
+        radius = self.radius#Config.AntSenseRadius
         x,y = position
-        
-        vow = self.phero_map[math.floor(x-radius):math.floor(x+radius),math.floor(y-radius):math.floor(y+radius),type]
-        self.sens_weight[0]*self.sens_weight[1]
+        x = math.floor(x)
+        y = math.floor(y)
+        mx = max(math.floor(x-radius),0)
+        px = min(self.world.width,x+radius+1)
+        my = max(math.floor(y-radius),0)
+        py = min(self.world.height,y+radius+1)
+        vow = self.phero_map[mx:px,my:py,type]
+        if len(np.where(vow!=0)[0]) == 0:
+            return None
+
+        mx2 = radius+mx-x
+        px2 = radius+px-x
+        my2 = radius+my-y
+        py2 = radius+py-y
+
+        #s1 = np.array(self.sens_weight[max(0,radius-x):min(self.world.width-x,radius)+radius+1,max(0,radius-y):min(self.world.height-y,radius)+radius+1,0])
+        #s2 = np.array(self.sens_weight[max(0,radius-x):min(self.world.width-x,radius)+radius+1,max(0,radius-y):min(self.world.height-y,radius)+radius+1,1])
+        s1 = np.array(self.sens_weight[mx2:px2,my2:py2,0])
+        s2 = np.array(self.sens_weight[mx2:px2,my2:py2,1])
+        s2[:,:] = (s2[:,:]-old_angle)%360
+        s2 = np.where(s2<180,s2,s2-360)
+        s2 = np.where(s2>-70,s2,-70)
+        s2 = np.where(s2<70,s2,70)
+        #s2 = s2.clip(-70,70)
+        s2[:,:] = (70-abs(s2[:,:]))/70
+        # s2[:,:] = [x if x<180 else x-360 for x in s2]
+
+        # if old_angle<180:
+        #     s2[:,:] = s2[:,:]-old_angle
+        #     s2 = s2.clip(-70,70)
+        # else:
+        #     s2[:,:] = s2[:,:]-old_angle-360
+        #     s2 = s2.clip(-70,70)
+        #center of mass
+        weights = vow[:,:]*s1[:,:]*s2[:,:]
+        if len(np.where(weights!=0)[0])== 0:
+            return None
+        #weights = s2
+        #mask_nonzero = weights[np.nonzero(weights[:,:])]
+        total_weight = np.sum(weights[:,:])
+
+        x = np.sum(np.array([(i-radius+mx2)*np.sum(weights[i,:]) for i in range(weights.shape[0])]))/total_weight
+        y = np.sum(np.array([(i-radius+my2)*np.sum(weights[:,i]) for i in range(weights.shape[1])]))/total_weight
+
+        #new_direction = np.average(mask_nonzero[:,:],axis=None, weights=np.sum(mask_nonzero[:,0]))
+        #print(np.arctan2(new_direction[1]-radius+my2,new_direction[0]-radius+mx2)/np.pi*180)
+        return np.arctan2(-y,x)/np.pi*180
+
