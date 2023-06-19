@@ -105,9 +105,10 @@ class Ant:
         iteration = 0
         while True:
             if self.sprite == None: break
-            self.sprite.updateImage()
             if self.nest.world.map == None: break
-            if self.sprite.collision(self.nest.world.map.sprite) == False: break
+            future_x = self.position[0] + Config.AntMoveDistance * Config.AntAngleStep * math.cos(math.radians(self.direction))
+            future_y = self.position[1] -Config.AntMoveDistance * Config.AntAngleStep * math.sin(math.radians(self.direction))
+            if self.nest.world.collision.checkPointMask((future_x, future_y), self.nest.world.map.sprite) == False: break
             if iteration % 2 == 0: 
                 search_angle += Config.AntWallSearchAngle
                 self.direction = (olddirection + (search_angle * search_invert)) % 360
@@ -117,7 +118,6 @@ class Ant:
             if iteration > 24: 
                 self.suicide()
                 return
-
         self.dx = Config.AntMoveDistance * math.cos(math.radians(self.direction))
         self.dy = -Config.AntMoveDistance * math.sin(math.radians(self.direction))
 

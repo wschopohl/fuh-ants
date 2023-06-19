@@ -31,6 +31,11 @@ class EnginePygame:
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.collision = CollisionPygame()
+        self.running = True
+        # used for Michaels User Code
+        class UserInteraction:
+            pass
+        self.user_interaction = UserInteraction() 
 
     def add(self, object):
         if type(object) is Ant:
@@ -47,94 +52,57 @@ class EnginePygame:
             self.pgpheromones.add(pgpheromone)
         if type(object) is Map:
             self.pgmap = PGMap(object)
+
+    def handleUserInteraction(self):
+        LEFT = 1
+        RIGHT = 2
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # left mousebutton = food placement
+                if event.button == LEFT:
+                    # activate timer and get mouse position
+                    self.user_interaction.x, self.user_interaction.y = pygame.mouse.get_pos()
+                    self.user_interaction.click_time_start = time.time()
+
+            elif event.type == pygame.MOUSEMOTION:
+                if event.buttons[RIGHT]:
+                    if pygame.key.get_pressed()[pygame.K_d]:
+                        self.pgmap.draw_circle(pygame.mouse.get_pos(), (0,0,0,0), 20)
+                    else:
+                        self.pgmap.draw_circle(pygame.mouse.get_pos(), Colors.UserWalls, 10)
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == LEFT:
+                    # Get mousebutton release time and calculate clickduration
+                    click_time_stop = time.time()
+                    click_duration = click_time_stop - self.user_interaction.click_time_start
+                    x,y = self.user_interaction.x, self.user_interaction.y
+                    # add food according click duration
+                    # add only when mouseposition is in the mask of the map
+
+
+                    pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
+                    touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
+
+                    if touching: break
+                    
+                    if (int(click_duration*300)) > Config.MaxUserFoodSize:
+                        self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxUserFoodSize))))
+
+                    else:
+                        self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+
         
     def startRenderLoop(self):
-        running = True
         render_step = 0
 
-        # Set variables for drawing position
-        x, y = 0, 0
-
-        # Start time for mouse-click event
-        click_time_start = time.time()
-
-        # Set Mousebutton type
-        LEFT = 1
-        RIGHT = 3
-
-        # Variables to track the start and end points of each line
-        lines = []
-        current_line = []
-
-        threshold = 20  # Adjust the threshold for line deletion
-       
-
         clock = pygame.time.Clock()
-        while running:
+        while self.running:
             render_step += 1
-
-            # check events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
                 
-
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # left mousebutton = food placement
-                    if event.button == LEFT:
-                        # activate timer and get mouse position
-                        x, y = pygame.mouse.get_pos()
-                        click_time_start = time.time()
-
-                    # right mousebutton = draw obstacles
-                    if event.button == RIGHT:
-                        # get mouse position and store it in current_line
-                       current_line = [pygame.mouse.get_pos()]
-
-                # Check if "d" is pressed
-                elif pygame.key.get_pressed()[pygame.K_d]:
-                    
-                    # Get the mouse position
-                    mouse_pos = pygame.mouse.get_pos()
-                  
-                    for line in lines:
-                        # Check if only one point of the mouse is near the line
-                        distance = abs((line[1][1] - line[0][1]) * mouse_pos[0] - (line[1][0] - line[0][0]) * mouse_pos[1] + line[1][0] * line[0][1] - line[1][1] * line[0][0]) / ((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) ** 0.5
-
-                        
-                        if distance < threshold:
-                            # Remove the line from the list
-                            lines.remove(line)
-   
-                        
-
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == LEFT:
-                        # Get mousebutton release time and calculate clickduration
-                        click_time_stop = time.time()
-                        click_duration = click_time_stop - click_time_start
-
-                        # add food according click duration
-                        # add only when mouseposition is in the mask of the map
-                                            
-                        pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
-                        touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
-
-                        if touching: break
-                        
-                        if (int(click_duration*300)) > Config.MaxUserFoodSize:
-                            self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxUserFoodSize))))
-
-                        else:
-                            self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
-
-
-                    # right mousebutton = draw obstacles
-                    if event.button == RIGHT:
-                        current_line.append(pygame.mouse.get_pos())
-                        lines.append(current_line)
-                        current_line = []
-                
+            self.handleUserInteraction()
 
             if not Config.UseThreading: self.world.update()
             
@@ -145,7 +113,7 @@ class EnginePygame:
             
             renderMutex.acquire()
             # TODO: Maybe optimize to not draw the lines every time
-            if self.pgmap != None: self.pgmap.draw(self.screen, lines)
+            if self.pgmap != None: self.pgmap.draw(self.screen)
             # self.screen.blit(self.debug_surface, (0,0))
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
@@ -246,14 +214,6 @@ class PGAnt(pygame.sprite.Sprite):
         self.middle = PGAnt.middle_offset.rotate(self.ant.direction)
         renderMutex.release()
 
-    def collision(self, map_obj):
-        self.update()
-        try:
-            answer = self.mask.overlap(map_obj.mask, (-self.rect.x, -self.rect.y)) is not None
-            return answer
-        except AttributeError:
-            return False
-
 
 class PGNest(pygame.sprite.Sprite):
     def __init__(self, nest):
@@ -320,25 +280,28 @@ class PGPheromone(pygame.sprite.Sprite):
 
 class PGMap(pygame.sprite.Sprite):
     def __init__(self, map_obj):
-        self.image = pygame.image.load(map_obj.image).convert_alpha()
-        self.mask = pygame.mask.from_surface(self.image)
+        self.original_image = pygame.image.load(map_obj.image).convert_alpha()
+        self.image = pygame.Surface((self.original_image.get_width(), self.original_image.get_height()), pygame.SRCALPHA)
+        self.draw_surface = pygame.Surface((self.original_image.get_width(), self.original_image.get_height()), pygame.SRCALPHA)
         self.rect = self.image.get_rect()
+        self.compose()
         map_obj.setSprite(self)
 
     def update(self):
         pass
 
+    def compose(self):
+        self.image.fill((0,0,0,0))
+        self.image.blit(self.original_image, (0,0))
+        self.image.blit(self.draw_surface, (0,0))
+        self.mask = pygame.mask.from_surface(self.image)
 
-    def draw(self, screen, lines):
-        mask_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        mask_surface.blit(self.image, self.rect)
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
 
-        for line in lines:
-            pygame.draw.line(mask_surface, Colors.UserLine, line[0], line[1], 2)
-
-        self.mask = pygame.mask.from_surface(mask_surface)
-
-        screen.blit(mask_surface, self.rect)
+    def draw_circle(self, position, color, radius):
+        pygame.draw.circle(self.draw_surface, color, position, radius)
+        self.compose()
 
    
 

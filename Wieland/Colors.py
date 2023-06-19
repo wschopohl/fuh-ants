@@ -9,6 +9,7 @@ Ant = (135,62,35)
 FoodCluster = (121,169,25)
 Description = (0, 0, 0)
 
+UserWalls = (128,52,2,255)
 InfoText = (0,0,100)
 
 PheromoneColors = {

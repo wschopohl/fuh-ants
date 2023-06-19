@@ -20,6 +20,9 @@ class CollisionPygame():
         objs = [pgobj.ant for pgobj in pgobjs]
         return objs
     
+    def checkPointMask(self, position, map_obj):
+        return map_obj.mask.get_at(position)
+    
     def getNearby(self, single, cluster, radius, type):
         (pgsprite, pggroup) = self.getPGObjects(single, cluster)
         if pgsprite == None: return []
