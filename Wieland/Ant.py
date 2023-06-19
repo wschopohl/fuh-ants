@@ -61,7 +61,9 @@ class Ant:
         pheromnoe_type = Type.HOME if self.carry_food == 0 else Type.FOOD
         self.nest.world.add(Pheromone(self.position, pheromnoe_type, self.pheromone_intensity))
 
-    def randomChangeDirection_unmodified(self):
+    # old version left for reference
+    def randomChangeDirection_wieland_original(self):
+        # ants are allowed to walk outside the window a little bit, but are steered back soon after
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
             self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
@@ -77,7 +79,9 @@ class Ant:
         self.calculateMoveVectors()
         if self.sprite != None: self.sprite.updateImage()
     
+    # updated version by lennart, that introduces more randomness
     def randomChangeDirection(self):
+        # ants are allowed to walk outside the window a little bit, but are steered back soon after
         if self.position[0] < -50 or self.position[0] > self.nest.world.width + 50 or self.position[1] < -50 or self.position[1] > self.nest.world.height + 50:
             self.direction = (fast_angle(self.position[0] - self.nest.world.width / 2, self.position[1] - self.nest.world.height / 2)) % 360
         if self.step % Config.AntAngleStep != 0: return
@@ -143,12 +147,11 @@ class Ant:
         
         near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
 
-        # angle = self.calculate_pheromone_vector_unmodified(near_pheromones)
         angle = self.calculate_pheromone_vector(near_pheromones)
     
         return angle
 
-    def calculate_pheromone_vector_unmodified(self, pheromones):
+    def calculate_pheromone_vector(self, pheromones):
         if len(pheromones) == 0: return None
 
         vector = {'x': 0, 'y': 0}
@@ -172,7 +175,8 @@ class Ant:
     
     # slices the total field of view into three equal circle sectors and returns an angle pointing towards the 
     # center of the sector containing the highest total pheromone intensity
-    def calculate_pheromone_vector(self, pheromones):
+    # code that lennart brought in, currently not used but kept for reference
+    def calculate_pheromone_vector_in_sectors(self, pheromones):
         if len(pheromones) == 0: return None
 
         # vector = {'x': 0, 'y': 0}
