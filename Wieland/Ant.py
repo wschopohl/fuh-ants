@@ -163,13 +163,10 @@ class Ant:
                 if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
 
-        near_poison_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, Type.POISON.value)
-        poison_angle = self.calculate_pheromone_vector(near_poison_pheromones)
-
+        poison_angle = self.calculate_pheromone_vector(Config.AntSenseRadiusPoisonPheromones, Type.POISON.value)
         if poison_angle is None:
             # no poison pheromones => follow food/home pheromones
-            near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
-            angle = self.calculate_pheromone_vector(near_pheromones)
+            angle = self.calculate_pheromone_vector(Config.AntSenseRadius, pheromone_type.value)
         elif (poison_angle - self.direction) % 360 <= Config.AntFieldOfView:
             # poison pheromones on right side => turn as far left as possible
             angle = (self.direction - Config.AntFieldOfView) % 360
@@ -179,7 +176,8 @@ class Ant:
 
         return angle
 
-    def calculate_pheromone_vector(self, pheromones):
+    def calculate_pheromone_vector(self, radius, type):
+        pheromones = self.nest.world.pheromoneMap.getNearby(self.position, radius, type)
         if len(pheromones) == 0: return None
 
         vector = {'x': 0, 'y': 0}
@@ -187,13 +185,13 @@ class Ant:
             dx = self.position[0] - p.position[0]
             dy = self.position[1] - p.position[1]
             length = math.sqrt(dx*dx + dy*dy)
-            if length <= Config.AntSenseRadius:
+            if length <= radius:
                 angle = fast_angle(dx, dy)
                 if angle == None: continue
                 angle_delta = 180 - abs(abs(angle - self.direction) - 180)
                 if angle_delta <= Config.AntFieldOfView:
                     angle_factor = (1 - angle_delta / (Config.AntFieldOfView))
-                    length_factor = 1 #(1 - length / Config.AntSenseRadius) # distance factor not so important
+                    length_factor = 1 #(1 - length / radius) # distance factor not so important
                     vector['x'] += (dx * p.intensity * length_factor * angle_factor)
                     vector['y'] += (dy * p.intensity * length_factor * angle_factor)
 
