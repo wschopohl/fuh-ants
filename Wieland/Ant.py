@@ -162,24 +162,22 @@ class Ant:
                 dfood = calculate_distance(self.position, foodcluster.position)
                 if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
-        
-        near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
-        angle = self.calculate_pheromone_vector(near_pheromones)
 
         near_poison_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, Type.POISON.value)
         poison_angle = self.calculate_pheromone_vector(near_poison_pheromones)
 
         if poison_angle is None:
             # no poison pheromones => follow food/home pheromones
-            combined_angle = angle
+            near_pheromones = self.nest.world.pheromoneMap.getNearby(self.position, Config.AntSenseRadius, pheromone_type.value)
+            angle = self.calculate_pheromone_vector(near_pheromones)
         elif (poison_angle - self.direction) % 360 <= Config.AntFieldOfView:
             # poison pheromones on right side => turn as far left as possible
-            combined_angle = (self.direction - Config.AntFieldOfView) % 360
+            angle = (self.direction - Config.AntFieldOfView) % 360
         else:
             # poison pheromones on left side => turn as far right as possible
-            combined_angle = (self.direction + Config.AntFieldOfView) % 360
+            angle = (self.direction + Config.AntFieldOfView) % 360
 
-        return combined_angle
+        return angle
 
     def calculate_pheromone_vector(self, pheromones):
         if len(pheromones) == 0: return None
