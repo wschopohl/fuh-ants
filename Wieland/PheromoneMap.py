@@ -7,7 +7,7 @@ class PheromoneMap:
         self.world = world
         self.width = math.ceil(world.width / Config.PheromoneMapTileSize)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSize)
-        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(2)]
+        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(3)]
 
     def add(self, pheromone):
         x,y = self.getMapCoordinates(pheromone.position)

@@ -10,6 +10,7 @@ import Config
 
 import threading
 import time
+import math
 
 renderMutex = threading.Lock()
 
@@ -93,8 +94,18 @@ class EnginePygame:
 
                     else:
                         self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+            
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    mouse_pos = pygame.mouse.get_pos()
+                    for foodcluster in self.world.foodclusters:
+                        # print(math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
+                        #              + (foodcluster.position[1] - mouse_pos[1]) ** 2))
+                        if math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
+                                     + (foodcluster.position[1] - mouse_pos[1]) ** 2) <= foodcluster.size():
+                            foodcluster.poison()
 
-        
+
     def startRenderLoop(self):
         render_step = 0
 
@@ -240,7 +251,11 @@ class PGFoodCluster(pygame.sprite.Sprite):
     def update(self):
         if self.foodcluster.amount <= 0: self.kill()
         self.image = pygame.Surface((self.foodcluster.size()*2, self.foodcluster.size()*2), pygame.SRCALPHA)   # per-pixel alpha
-        pygame.draw.circle(self.image, Colors.FoodCluster, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())
+        if not self.foodcluster.is_poisoned:
+            color = Colors.FoodCluster
+        else:
+            color = Colors.FoodClusterPoisoned
+        pygame.draw.circle(self.image, color, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())    
         self.radius = self.foodcluster.size() # little hack because of oversized ant masks for view
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2

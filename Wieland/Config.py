@@ -12,6 +12,7 @@ RandomSteeringUpdateIntervalMin = 4     # lowest possible number of direction up
 RandomSteeringUpdateIntervalMax = 12    # highest possible number of direction updates where the random steering angle stays the same
 RandomSteeringWeight = 1                # applied to reduce the strength of random steering if there's a trail to follow (was 0.2 in Wieland's version)
 
+AntPoisonedLifespan = 500
 
 # graphical configs
 NestImageFile = "assets/nest.png"

@@ -5,6 +5,7 @@ import math
 class Type(Enum):
     HOME = 0
     FOOD = 1
+    POISON = 2
 
 class Pheromone:
     def __init__(self, position, type, intensity):
