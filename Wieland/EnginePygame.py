@@ -181,6 +181,7 @@ class EnginePygame:
 class PGAnt(pygame.sprite.Sprite):
     original_image = None
     original_image_food = None
+    original_image_poisoned_food = None
     original_mask_image = None
     middle_offset = None
 
@@ -191,6 +192,8 @@ class PGAnt(pygame.sprite.Sprite):
         PGAnt.original_mask_image = pygame.image.load(Config.AntViewMaskFile).convert_alpha()
         PGAnt.original_image_food = PGAnt.original_image.copy()
         pygame.draw.circle(PGAnt.original_image_food, Colors.FoodCluster, Config.AntFoodPosition, Config.AntFoodSize)
+        PGAnt.original_image_poisoned_food = PGAnt.original_image.copy()
+        pygame.draw.circle(PGAnt.original_image_poisoned_food, Colors.FoodClusterPoisoned, Config.AntFoodPosition, Config.AntFoodSize)
         image_rect = PGAnt.original_image.get_rect()
         PGAnt.middle_offset = pygame.Vector2(image_rect.width / 2 - Config.AntMiddlePosition[0], image_rect.height / 2 - Config.AntMiddlePosition[1])
     
@@ -217,7 +220,10 @@ class PGAnt(pygame.sprite.Sprite):
         deg = (self.ant.direction)
         self.image = PGAnt.original_image
         if self.ant.carry_food > 0:
-            self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
+            if not self.ant.is_poisoned:
+                self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
+            else:
+                self.image = pygame.transform.rotate(PGAnt.original_image_poisoned_food, deg)
         else:    
             self.image = pygame.transform.rotate(PGAnt.original_image, deg)
         self.mask = pygame.mask.from_surface(pygame.transform.rotate(PGAnt.original_mask_image, deg))
