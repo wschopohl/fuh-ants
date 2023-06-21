@@ -50,6 +50,7 @@ class World:
         if type(object) is Pheromone:
             self.pheromoneMap.remove(object)
             self.pheromones.remove(object)
+            self.render_engine.remove(object)
         if type(object) is Ant:
             self.ants.remove(object)
             object.sprite.kill()
