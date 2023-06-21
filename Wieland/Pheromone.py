@@ -8,6 +8,8 @@ class Type(Enum):
     POISON = 2
 
 class Pheromone:
+    maxIntensity = 1
+
     def __init__(self, position, type, intensity):
         self.position = position
         self.type = type.value
@@ -26,7 +28,6 @@ class Pheromone:
         if self.represents <= 0: self.represents = 1
         self.intensity -= (amount * math.ceil(self.represents))
         if self.intensity <= 0:
-            if self.sprite != None: self.sprite.kill()
             self.world.remove(self)
 
     def update(self):
