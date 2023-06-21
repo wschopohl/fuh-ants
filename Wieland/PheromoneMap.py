@@ -11,7 +11,8 @@ class PheromoneMap:
             Config.PheromoneMapTileSize = 3
         self.width = math.ceil(world.width / Config.PheromoneMapTileSize)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSize)
-        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(2)]    
+        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(3)]
+          
         self.radius = 90 # distance of view
         self.aov = 70 # angle of view
         if Config.UseNumpy:
