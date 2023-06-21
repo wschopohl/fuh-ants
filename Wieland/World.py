@@ -69,6 +69,9 @@ class World:
         self.checkFoodClusterCollision()
         self.checkNestCollision()
         for pheromone in self.pheromones: pheromone.decay(Config.PheromoneDecay)
+        if Config.UseNumpy:
+            self.pheromoneMap.update()
+
 
     def stop(self):
         for nest in self.nests:

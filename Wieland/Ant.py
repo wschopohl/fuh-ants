@@ -162,6 +162,8 @@ class Ant:
                 dfood = calculate_distance(self.position, foodcluster.position)
                 if dfood <= Config.AntSenseRadius + Config.NestSize:
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
+        if Config.UseNumpy:
+            return self.nest.world.pheromoneMap.numpy_sensor(self.position,self.direction,pheromone_type.value)
 
         poison_angle = self.calculate_pheromone_vector(Config.AntSenseRadiusPoisonPheromones, Type.POISON.value)
         if poison_angle is None:

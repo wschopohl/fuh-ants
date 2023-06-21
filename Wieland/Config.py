@@ -35,3 +35,4 @@ PheromoneMapTileSize = 15
 # The maximum food size that can be placed per mouse click (interaction) is defined as follows 
 MaxUserFoodSize = 400
 UseThreading = True
+UseNumpy = True
