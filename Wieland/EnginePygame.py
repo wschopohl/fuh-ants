@@ -10,6 +10,7 @@ import Config
 
 import threading
 import time
+import math
 
 renderMutex = threading.Lock()
 
@@ -93,8 +94,18 @@ class EnginePygame:
 
                     else:
                         self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+            
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    mouse_pos = pygame.mouse.get_pos()
+                    for foodcluster in self.world.foodclusters:
+                        # print(math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
+                        #              + (foodcluster.position[1] - mouse_pos[1]) ** 2))
+                        if math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
+                                     + (foodcluster.position[1] - mouse_pos[1]) ** 2) <= foodcluster.size():
+                            foodcluster.poison()
 
-        
+
     def startRenderLoop(self):
         render_step = 0
 
@@ -170,6 +181,7 @@ class EnginePygame:
 class PGAnt(pygame.sprite.Sprite):
     original_image = None
     original_image_food = None
+    original_image_poisoned_food = None
     original_mask_image = None
     middle_offset = None
 
@@ -180,6 +192,8 @@ class PGAnt(pygame.sprite.Sprite):
         PGAnt.original_mask_image = pygame.image.load(Config.AntViewMaskFile).convert_alpha()
         PGAnt.original_image_food = PGAnt.original_image.copy()
         pygame.draw.circle(PGAnt.original_image_food, Colors.FoodCluster, Config.AntFoodPosition, Config.AntFoodSize)
+        PGAnt.original_image_poisoned_food = PGAnt.original_image.copy()
+        pygame.draw.circle(PGAnt.original_image_poisoned_food, Colors.FoodClusterPoisoned, Config.AntFoodPosition, Config.AntFoodSize)
         image_rect = PGAnt.original_image.get_rect()
         PGAnt.middle_offset = pygame.Vector2(image_rect.width / 2 - Config.AntMiddlePosition[0], image_rect.height / 2 - Config.AntMiddlePosition[1])
     
@@ -206,7 +220,10 @@ class PGAnt(pygame.sprite.Sprite):
         deg = (self.ant.direction)
         self.image = PGAnt.original_image
         if self.ant.carry_food > 0:
-            self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
+            if not self.ant.is_poisoned:
+                self.image = pygame.transform.rotate(PGAnt.original_image_food, deg)
+            else:
+                self.image = pygame.transform.rotate(PGAnt.original_image_poisoned_food, deg)
         else:    
             self.image = pygame.transform.rotate(PGAnt.original_image, deg)
         self.mask = pygame.mask.from_surface(pygame.transform.rotate(PGAnt.original_mask_image, deg))
@@ -240,7 +257,11 @@ class PGFoodCluster(pygame.sprite.Sprite):
     def update(self):
         if self.foodcluster.amount <= 0: self.kill()
         self.image = pygame.Surface((self.foodcluster.size()*2, self.foodcluster.size()*2), pygame.SRCALPHA)   # per-pixel alpha
-        pygame.draw.circle(self.image, Colors.FoodCluster, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())
+        if not self.foodcluster.is_poisoned:
+            color = Colors.FoodCluster
+        else:
+            color = Colors.FoodClusterPoisoned
+        pygame.draw.circle(self.image, color, (self.foodcluster.size(), self.foodcluster.size()), self.foodcluster.size())    
         self.radius = self.foodcluster.size() # little hack because of oversized ant masks for view
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
