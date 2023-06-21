@@ -4,6 +4,7 @@ from Nest import Nest
 from FoodCluster import FoodCluster
 from EnginePygame import EnginePygame
 from Map import Map
+import Config
 
 def main():
     scene = 1
@@ -21,7 +22,7 @@ def main():
 
     if scene == 1:
         world.add(Map("assets/maps/map_dyno.png"))
-        world.add(Nest(position = (306,166), spawn_rate=50, max_ants = 100))
+        world.add(Nest(position = (206,166), spawn_rate=50, max_ants = 500))
         world.add(FoodCluster(position = (648,616), amount=200))
         world.add(FoodCluster(position = (1056,622), amount=400))
         world.add(FoodCluster(position = (1006,108), amount=600))
@@ -49,7 +50,7 @@ def main():
         world.add(FoodCluster(position = (700,363), amount=1000))
 
 
-    world.run()
+    if Config.UseThreading: world.run()
     engine.startRenderLoop()  # sync call, execution waits here
 
 if __name__ == '__main__':
