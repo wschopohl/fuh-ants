@@ -38,7 +38,8 @@ class EnginePygame:
         # used for Michaels User Code
         class UserInteraction:
             pass
-        self.user_interaction = UserInteraction() 
+        self.user_interaction = UserInteraction()
+        self.user_interaction.active_foodcluster = None
 
     def add(self, object):
         if type(object) is Ant:
@@ -63,15 +64,22 @@ class EnginePygame:
     def handleUserInteraction(self):
         LEFT = 1
         RIGHT = 2
+        
+        if self.user_interaction.active_foodcluster != None:
+            amount = int((time.time() - self.user_interaction.click_time_start) * 500)
+            self.user_interaction.active_foodcluster.amount = amount
+            self.user_interaction.active_foodcluster.sprite.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # left mousebutton = food placement
-                if event.button == LEFT:
-                    # activate timer and get mouse position
-                    self.user_interaction.x, self.user_interaction.y = pygame.mouse.get_pos()
+                if event.button == LEFT and not self.pgmap.mask.get_at(pygame.mouse.get_pos()) :
+                    self.user_interaction.active_foodcluster = FoodCluster(position = pygame.mouse.get_pos(), amount=1)
                     self.user_interaction.click_time_start = time.time()
+                    self.world.add(self.user_interaction.active_foodcluster)
 
             elif event.type == pygame.MOUSEMOTION:
                 if event.buttons[RIGHT]:
@@ -82,24 +90,7 @@ class EnginePygame:
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == LEFT:
-                    # Get mousebutton release time and calculate clickduration
-                    click_time_stop = time.time()
-                    click_duration = click_time_stop - self.user_interaction.click_time_start
-                    x,y = self.user_interaction.x, self.user_interaction.y
-                    # add food according click duration
-                    # add only when mouseposition is in the mask of the map
-
-
-                    pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
-                    touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
-
-                    if touching: break
-                    
-                    if (int(click_duration*300)) > Config.MaxUserFoodSize:
-                        self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxUserFoodSize))))
-
-                    else:
-                        self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+                    self.user_interaction.active_foodcluster = None
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:

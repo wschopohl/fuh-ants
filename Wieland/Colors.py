@@ -14,7 +14,7 @@ UserWalls = (128,52,2,255)
 InfoText = (0,0,100)
 
 PheromoneColors = {
-    PheromoneType.HOME.value : (168,34,8,100),
-    PheromoneType.FOOD.value : (121,169,25,100),
+    PheromoneType.HOME.value : (31,191,255,100),
+    PheromoneType.FOOD.value : (244,255,31,100),
     PheromoneType.POISON.value : (127,0,127,100)
 }
