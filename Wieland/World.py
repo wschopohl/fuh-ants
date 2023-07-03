@@ -119,3 +119,7 @@ class World:
 
     def randomPosition(self, margin=0):
         return (randrange(margin, self.width - margin), randrange(margin, self.height - margin))
+    
+    
+    def handle_erase(self, pos):
+        self.pheromoneMap.erase_pheromones(pos)

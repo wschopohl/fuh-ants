@@ -64,6 +64,14 @@ class PheromoneMap:
         #old
         x,y = self.getMapCoordinates(pheromone.position)
         self.map[pheromone.type][y][x] = None
+
+    def erase_pheromones(self, pos):
+        print("CONTINUE HERE!")
+        x, y = pos  # Extract x and y from pos
+        
+
+
+
     def update(self):
         if Config.UseNumpy:
             self.phero_map -= Config.PheromoneDecay

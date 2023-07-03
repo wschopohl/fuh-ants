@@ -28,11 +28,11 @@ NestSize = 20
 FoodSize = 0.03
 
 PheromoneSize = 2
-PheromoneDecay = 0.001
+PheromoneDecay = 0.0001
 PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15
 
 # The maximum food size that can be placed per mouse click (interaction) is defined as follows 
 MaxUserFoodSize = 400
 UseThreading = False
-UseNumpy = True
+UseNumpy = False
