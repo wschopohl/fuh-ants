@@ -27,7 +27,9 @@ class EnginePygame:
         self.pgants = pygame.sprite.Group()
         self.pgnests = pygame.sprite.Group()
         self.pgfoodclusters = pygame.sprite.Group()
-        self.pgpheromones = pygame.sprite.Group()
+        self.pgpheromones = []
+        self.pheromone_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.pheromone_update_step = 0
         self.pgmap = None
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
@@ -36,7 +38,8 @@ class EnginePygame:
         # used for Michaels User Code
         class UserInteraction:
             pass
-        self.user_interaction = UserInteraction() 
+        self.user_interaction = UserInteraction()
+        self.user_interaction.active_foodcluster = None
 
     def add(self, object):
         if type(object) is Ant:
@@ -50,22 +53,33 @@ class EnginePygame:
             self.pgfoodclusters.add(pgfoodcluster)
         if type(object) is Pheromone:
             pgpheromone = PGPheromone(object)
-            self.pgpheromones.add(pgpheromone)
+            self.pgpheromones.append(pgpheromone)
         if type(object) is Map:
             self.pgmap = PGMap(object)
+    
+    def remove(self, object):
+        if type(object) is Pheromone:
+            self.pgpheromones.remove(object.sprite)
 
     def handleUserInteraction(self):
         LEFT = 1
         RIGHT = 2
+        
+        if self.user_interaction.active_foodcluster != None:
+            amount = int((time.time() - self.user_interaction.click_time_start) * 500)
+            self.user_interaction.active_foodcluster.amount = amount
+            self.user_interaction.active_foodcluster.sprite.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # left mousebutton = food placement
-                if event.button == LEFT:
-                    # activate timer and get mouse position
-                    self.user_interaction.x, self.user_interaction.y = pygame.mouse.get_pos()
+                if event.button == LEFT and not self.pgmap.mask.get_at(pygame.mouse.get_pos()) :
+                    self.user_interaction.active_foodcluster = FoodCluster(position = pygame.mouse.get_pos(), amount=1)
                     self.user_interaction.click_time_start = time.time()
+                    self.world.add(self.user_interaction.active_foodcluster)
 
             elif event.type == pygame.MOUSEMOTION:
                 if event.buttons[RIGHT]:
@@ -76,24 +90,7 @@ class EnginePygame:
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == LEFT:
-                    # Get mousebutton release time and calculate clickduration
-                    click_time_stop = time.time()
-                    click_duration = click_time_stop - self.user_interaction.click_time_start
-                    x,y = self.user_interaction.x, self.user_interaction.y
-                    # add food according click duration
-                    # add only when mouseposition is in the mask of the map
-
-
-                    pos_in_mask = x - self.pgmap.rect.x, y - self.pgmap.rect.x
-                    touching = self.pgmap.rect.collidepoint(x,y) and self.pgmap.mask.get_at(pos_in_mask) 
-
-                    if touching: break
-                    
-                    if (int(click_duration*300)) > Config.MaxUserFoodSize:
-                        self.world.add(FoodCluster(position = (x,y), amount=(int(Config.MaxUserFoodSize))))
-
-                    else:
-                        self.world.add(FoodCluster(position=(x, y), amount=int(click_duration * 300)))
+                    self.user_interaction.active_foodcluster = None
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p:
@@ -105,39 +102,44 @@ class EnginePygame:
                                      + (foodcluster.position[1] - mouse_pos[1]) ** 2) <= foodcluster.size():
                             foodcluster.poison()
 
+    def drawPheromones(self):
+        self.pheromone_update_step += 1
+        if self.pheromone_update_step % 1 == 0:
+            maxIntensity = 1
+            self.pheromone_surface.fill((0,0,0,0))
+            for pgpheromone in self.pgpheromones:
+                if pgpheromone.pheromone.intensity > maxIntensity:
+                    maxIntensity = pgpheromone.pheromone.intensity
+                pgpheromone.draw(self.pheromone_surface)
+
+            Pheromone.maxIntensity = maxIntensity
+
+        self.screen.blit(self.pheromone_surface, (0,0))
+
 
     def startRenderLoop(self):
-        render_step = 0
-
         clock = pygame.time.Clock()
         while self.running:
-            render_step += 1
                 
             self.handleUserInteraction()
 
             if not Config.UseThreading: self.world.update()
             
             self.pgants.update()
-            if render_step % 5 == 0: self.pgpheromones.update()
             
             self.screen.fill(Colors.Background)
             
             renderMutex.acquire()
-            # TODO: Maybe optimize to not draw the lines every time
+            self.drawPheromones()
             if self.pgmap != None: self.pgmap.draw(self.screen)
             # self.screen.blit(self.debug_surface, (0,0))
             self.pgnests.draw(self.screen)
             self.pgfoodclusters.draw(self.screen)
-            self.pgpheromones.draw(self.screen)
             self.pgants.draw(self.screen)
-            # for ant in self.pgants:
-            #     pygame.draw.circle(self.screen, (0,0,0,40), ant.ant.position, Config.AntSenseRadius, 1)
             self.printNestStats()
             self.printDescription()
            
-            renderMutex.release()
-
-            
+            renderMutex.release()            
             
             pygame.display.flip()
             # self.debug_surface.fill((255,255,255,0))
@@ -267,37 +269,16 @@ class PGFoodCluster(pygame.sprite.Sprite):
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
         self.rect.y = self.foodcluster.position[1] - self.rect.height / 2
 
-class PGPheromone(pygame.sprite.Sprite):
-    pheromone_images = {}
-    
-    @classmethod
-    def loadImages(cls):
-        if PGPheromone.pheromone_images:
-            return
-        for color in Colors.PheromoneColors:
-            tmp_image = pygame.Surface((Config.PheromoneSize*2, Config.PheromoneSize*2), pygame.SRCALPHA)   # per-pixel alpha
-            pygame.draw.circle(tmp_image, Colors.PheromoneColors[color], (Config.PheromoneSize, Config.PheromoneSize), Config.PheromoneSize)
-            PGPheromone.pheromone_images[color] = tmp_image
-    
+class PGPheromone():
     def __init__(self, pheromone):
-        pygame.sprite.Sprite.__init__(self)
-        PGPheromone.loadImages()
         self.pheromone = pheromone
         pheromone.setSprite(self)
-        self.image = PGPheromone.pheromone_images[pheromone.type].copy()
-        self.rect = self.image.get_rect()
-        self.update()
 
-    def update(self):
-        intensity = (self.pheromone.intensity / 10 * 225) + 20
-        # size = (5 / 10) * self.pheromone.intensity
-        # self.image = pygame.transform.scale(PGPheromone.pheromone_images[self.pheromone.type], (size, size))
-        self.rect.x = self.pheromone.position[0] - self.rect.width / 2
-        self.rect.y = self.pheromone.position[1] - self.rect.height / 2
-        self.image.set_alpha(intensity)
+    def draw(self, surface):
+        color = self.pheromone.type
+        size = Config.PheromoneSize + Config.PheromoneMapTileSize * self.pheromone.intensity / Pheromone.maxIntensity
+        pygame.draw.circle(surface, Colors.PheromoneColors[color], self.pheromone.position, size)
 
-    def remove(self):
-        self.kill()
 
 class PGMap(pygame.sprite.Sprite):
     def __init__(self, map_obj):
