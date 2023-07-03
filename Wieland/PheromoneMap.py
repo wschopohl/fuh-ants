@@ -1,6 +1,6 @@
 import Config
 import math
-from Pheromone import Type
+from Pheromone import Type, Pheromone
 import numpy as np
 
 
@@ -66,8 +66,19 @@ class PheromoneMap:
         self.map[pheromone.type][y][x] = None
 
     def erase_pheromones(self, pos):
-        print("CONTINUE HERE!")
-        x, y = pos  # Extract x and y from pos
+        # Remove pheromones at a specific position
+        x, y = self.getMapCoordinates(pos)
+        if x >= self.width or y >= self.height or x < 0 or y < 0:
+            return
+
+        for pheromone_type in range(len(self.map)):
+            self.map[pheromone_type][y][x] = None
+
+            print("erased")
+
+
+    
+
         
 
 

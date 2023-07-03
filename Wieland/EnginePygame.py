@@ -82,13 +82,11 @@ class EnginePygame:
                     self.world.add(self.user_interaction.active_foodcluster)
 
             elif event.type == pygame.MOUSEMOTION:
+                if pygame.key.get_pressed()[pygame.K_r]:
+                        self.world.handle_erase(pygame.mouse.get_pos())
                 if event.buttons[RIGHT]:
                     if pygame.key.get_pressed()[pygame.K_d]:
                         self.pgmap.draw_circle(pygame.mouse.get_pos(), (0,0,0,0), 20)
-                    
-
-                    elif pygame.key.get_pressed()[pygame.K_r]:
-                        self.world.handle_erase(pygame.mouse.get_pos())
 
                     else:
                         self.pgmap.draw_circle(pygame.mouse.get_pos(), Colors.UserWalls, 10)
