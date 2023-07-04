@@ -35,9 +35,10 @@ def main():
         world.add(Nest(position = (64,223), spawn_rate=50, max_ants = 500))
         world.add(FoodCluster(position = (1080,206), amount=2000))
     elif scene == 4:
+        import configs.map_maze
         world.add(Map("assets/maps/map_maze.png"))
         world.add(Nest(position = (430,390), spawn_rate=50, max_ants = 200))
-        world.add(FoodCluster(position = (1020,80), amount=2000))
+        world.add(FoodCluster(position = (1020,80), amount=1000))
     elif scene == 5:
         world.add(Nest(position = world.randomPosition(100), spawn_rate=50, max_ants = 500))
         world.add(FoodCluster(position = world.randomPosition(100), amount=1000))

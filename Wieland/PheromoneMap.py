@@ -15,6 +15,7 @@ class PheromoneMap:
         if x < 0 or y < 0: return False
         if self.map[pheromone.type][y][x] == None:
             self.map[pheromone.type][y][x] = pheromone
+            pheromone.tile = (x,y)
             return True
         self.adjustPheromone(self.map[pheromone.type][y][x], pheromone)
         return False
