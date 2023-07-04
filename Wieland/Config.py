@@ -1,12 +1,13 @@
 AntMoveDistance = 1
-AntAngleVariation = 20
+AntAngleVariation = 15
 AntAngleStep = 10
 AntSleepTime = 0.001
 AntPheromoneDrop = 5
-AntSenseRadius = 120
+AntSenseRadius = 30
+AntNestSenseRadius = 100
 AntFieldOfView = 70
 AntWallViewDistance = AntMoveDistance + AntAngleStep + 5
-AntWallSearchAngle = 15
+AntWallSearchAngle = 33
 
 RandomSteeringUpdateIntervalMin = 4     # lowest possible number of direction updates where the random steering angle stays the same
 RandomSteeringUpdateIntervalMax = 12    # highest possible number of direction updates where the random steering angle stays the same
@@ -28,9 +29,9 @@ NestSize = 20
 FoodSize = 0.03
 
 PheromoneSize = 2
-PheromoneDecay = 0.001
+PheromoneDecay = 0.0005
 PheromoneDistanceReduce = 0.1
-PheromoneMapTileSize = 15
+PheromoneMapTileSize = 5
 
 # The maximum food size that can be placed per mouse click (interaction) is defined as follows 
 MaxUserFoodSize = 400

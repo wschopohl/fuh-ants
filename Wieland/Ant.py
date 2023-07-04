@@ -2,6 +2,7 @@ from random import randint
 import math
 
 from Pheromone import Pheromone, Type
+from TileMemory import TileMemory
 
 import Config
 
@@ -18,6 +19,7 @@ class Ant:
         self.pheromone_intensity = 1
         self.sprite = None
         self.wallSearchStart = randint(0,1)
+        self.memory = TileMemory(200)
         self.calculateMoveVectors()
 
         self.nextRandomSteeringUpdate = 0
@@ -30,6 +32,7 @@ class Ant:
 
     def move(self):
         self.pheromone_intensity -= (Config.PheromoneDecay * Config.PheromoneDistanceReduce)
+        if(self.pheromone_intensity <= 0): self.suicide()
         self.step += 1
         self.position = (self.position[0] + self.dx, self.position[1] + self.dy)
         if self.is_poisoned and self.step > self.poisoning_time + Config.AntPoisonedLifespan:
@@ -51,6 +54,7 @@ class Ant:
             self.is_poisoned = True
             self.poisoning_time = self.step
         self.turnaround()
+        self.memory.reset()
         self.sprite.updateImage()
 
     def deliver(self, nest):
@@ -59,10 +63,11 @@ class Ant:
         if self.carry_food == 0: return
         nest.deliver(self.carry_food)
         self.carry_food = 0
-        # self.turnaround()
-        self.position = self.nest.position
-        self.direction = randint(0,360)
-        self.calculateMoveVectors()
+        self.memory.reset()
+        self.turnaround()
+        # self.position = self.nest.position
+        # self.direction = randint(0,360)
+        # self.calculateMoveVectors()
 
     def dropPheromone(self):
         if self.step % Config.AntPheromoneDrop != 0: return
@@ -128,6 +133,8 @@ class Ant:
             future_x = self.position[0] + Config.AntMoveDistance * Config.AntAngleStep * math.cos(math.radians(self.direction))
             future_y = self.position[1] -Config.AntMoveDistance * Config.AntAngleStep * math.sin(math.radians(self.direction))
             if self.nest.world.collision.checkPointMask((future_x, future_y), self.nest.world.map.sprite) == False: break
+            # search_angle = randint(1,24) * 15
+            # self.direction = (olddirection + (search_angle)) % 360
             if iteration % 2 == 0: 
                 search_angle += Config.AntWallSearchAngle
                 self.direction = (olddirection + (search_angle * search_invert)) % 360
@@ -152,7 +159,7 @@ class Ant:
         if pheromone_type == Type.HOME:
             dnest = calculate_distance(self.position, self.nest.position)
             # print(self.nest.radius)
-            if dnest <= Config.AntSenseRadius + Config.NestSize:
+            if dnest <= (Config.AntNestSenseRadius + Config.NestSize):
                 return fast_angle(self.position[0] - self.nest.position[0], self.position[1] - self.nest.position[1])
             
         # if near to food ignore pheromones and go directly in direction of food
@@ -160,7 +167,7 @@ class Ant:
             for foodcluster in self.nest.world.foodclusters:
                 if foodcluster.amount <= 0: continue
                 dfood = calculate_distance(self.position, foodcluster.position)
-                if dfood <= Config.AntSenseRadius + Config.NestSize:
+                if dfood <= (Config.AntSenseRadius + foodcluster.size()):
                     return fast_angle(self.position[0] - foodcluster.position[0], self.position[1] - foodcluster.position[1])
 
         poison_angle = self.calculate_pheromone_vector(Config.AntSenseRadiusPoisonPheromones, Type.POISON.value)
@@ -184,16 +191,22 @@ class Ant:
         for p in pheromones:
             dx = self.position[0] - p.position[0]
             dy = self.position[1] - p.position[1]
-            length = math.sqrt(dx*dx + dy*dy)
+            length = math.sqrt(dx**2 + dy**2)
             if length <= radius:
                 angle = fast_angle(dx, dy)
                 if angle == None: continue
                 angle_delta = 180 - abs(abs(angle - self.direction) - 180)
                 if angle_delta <= Config.AntFieldOfView:
+                    memory_tile = self.memory.get(p.tile)
+                    memory_factor = 1
+                    if memory_tile != None:
+                        memory_factor = memory_tile["intensity"]
+                        
+                    self.memory.remember(p.tile)
                     angle_factor = (1 - angle_delta / (Config.AntFieldOfView))
                     length_factor = 1 #(1 - length / radius) # distance factor not so important
-                    vector['x'] += (dx * p.intensity * length_factor * angle_factor)
-                    vector['y'] += (dy * p.intensity * length_factor * angle_factor)
+                    vector['x'] += (dx * p.intensity * length_factor * angle_factor * memory_factor)
+                    vector['y'] += (dy * p.intensity * length_factor * angle_factor * memory_factor)
 
         if vector['x'] == 0 == vector['y']: return None
         return fast_angle(vector['x'], vector['y'])
