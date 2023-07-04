@@ -3,8 +3,8 @@ AntAngleVariation = 15
 AntAngleStep = 10
 AntSleepTime = 0.001
 AntPheromoneDrop = 5
-AntSenseRadius = 30
-AntNestSenseRadius = 100
+AntSenseRadius = 80
+AntNestSenseRadius = 120
 AntFieldOfView = 70
 AntWallViewDistance = AntMoveDistance + AntAngleStep + 5
 AntWallSearchAngle = 33
@@ -31,8 +31,6 @@ FoodSize = 0.03
 PheromoneSize = 2
 PheromoneDecay = 0.0005
 PheromoneDistanceReduce = 0.1
-PheromoneMapTileSize = 5
+PheromoneMapTileSize = 15
 
-# The maximum food size that can be placed per mouse click (interaction) is defined as follows 
-MaxUserFoodSize = 400
 UseThreading = True
