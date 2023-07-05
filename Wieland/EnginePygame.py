@@ -33,6 +33,7 @@ class EnginePygame:
         self.pgmap = None
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.draw_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.description_surfaces = []
         self.collision = CollisionPygame()
         self.running = True
         # used for Michaels User Code
@@ -40,6 +41,7 @@ class EnginePygame:
             pass
         self.user_interaction = UserInteraction()
         self.user_interaction.active_foodcluster = None
+        self.buildDescription()
 
     def add(self, object):
         if type(object) is Ant:
@@ -87,20 +89,23 @@ class EnginePygame:
                         self.pgmap.draw_circle(pygame.mouse.get_pos(), (0,0,0,0), 20)
                     else:
                         self.pgmap.draw_circle(pygame.mouse.get_pos(), Colors.UserWalls, 10)
+                if pygame.key.get_pressed()[pygame.K_r]:
+                    mouse_pos = pygame.mouse.get_pos()
+                    self.world.pheromoneMap.removeAllAt(mouse_pos)
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == LEFT:
                     self.user_interaction.active_foodcluster = None
             
             elif event.type == pygame.KEYDOWN:
+                mouse_pos = pygame.mouse.get_pos()
                 if event.key == pygame.K_p:
-                    mouse_pos = pygame.mouse.get_pos()
                     for foodcluster in self.world.foodclusters:
-                        # print(math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
-                        #              + (foodcluster.position[1] - mouse_pos[1]) ** 2))
                         if math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
                                      + (foodcluster.position[1] - mouse_pos[1]) ** 2) <= foodcluster.size():
                             foodcluster.poison()
+                
+
 
     def drawPheromones(self):
         self.pheromone_update_step += 1
@@ -137,7 +142,7 @@ class EnginePygame:
             self.pgfoodclusters.draw(self.screen)
             self.pgants.draw(self.screen)
             self.printNestStats()
-            self.printDescription()
+            self.renderDescription()
            
             renderMutex.release()            
             
@@ -157,20 +162,20 @@ class EnginePygame:
         text_surface = self.font.render(text, True, Colors.InfoText)
         self.screen.blit(text_surface, (20, 20))
 
-    def printDescription(self):
-        text = " Press + hold left mousebutton for food placement."
-        text2 = " Press + hold right mousebutton for wall placement."
-        text3 = " Point with mouse + press \"d\" for deleting walls."
-
-        text_surface = self.font.render(text, True, Colors.Description)
-        text_surface2 = self.font.render(text2, True, Colors.Description)
-        text_surface3 = self.font.render(text3, True, Colors.Description)
-
-        self.screen.blit(text_surface, (20, self.world.height-20))
-        self.screen.blit(text_surface2, (20, self.world.height-40))
-        self.screen.blit(text_surface3, (20, self.world.height-60))
-
-        
+    
+    def buildDescription(self):
+        description = [
+            "Press + hold left mousebutton for food placement.",
+            "Press + hold right mousebutton for wall placement.",
+            "Point with mouse + press \"d\" to remove walls.",
+            "Point with mouse + press \"r\" to remove pheromones."
+        ]
+        for line in reversed(description):
+            self.description_surfaces.append(self.font.render(line, True, Colors.Description))
+    
+    def renderDescription(self):
+        for idx, surface in enumerate(self.description_surfaces):
+            self.screen.blit(surface, (20, self.world.height-30-20*idx))
 
     def drawVector(self, start, end):
         pygame.draw.line(self.draw_surface, (255,0,0,255), start, end)
