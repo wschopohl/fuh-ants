@@ -32,5 +32,6 @@ PheromoneSize = 2
 PheromoneDecay = 0.0005
 PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15
+PheromoneEraserSize = 20
 
 UseThreading = True

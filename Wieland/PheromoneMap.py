@@ -24,6 +24,18 @@ class PheromoneMap:
         x,y = self.getMapCoordinates(pheromone.position)
         self.map[pheromone.type][y][x] = None
 
+    def removeAllAt(self, position):
+        mx,my = self.getMapCoordinates(position)
+        size = int(Config.PheromoneEraserSize / Config.PheromoneMapTileSize)
+        for y in range(my-size,my+size):
+            for x in range(mx-size,mx+size):
+                if x >= self.width or y >= self.height: continue
+                if x < 0 or y < 0: continue
+                for type in range(3):
+                    if self.map[type][y][x] == None: continue
+                    self.map[type][y][x].remove()
+                    self.map[type][y][x] = None
+
     def adjustPheromone(self, existing_pheromone, new_pheromone):
         ifactor = (new_pheromone.intensity / (new_pheromone.intensity + existing_pheromone.intensity))
         dx = (new_pheromone.position[0] - existing_pheromone.position[0]) * ifactor
