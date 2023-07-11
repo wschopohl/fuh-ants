@@ -18,6 +18,6 @@ Config.RandomSteeringWeight = 1                # applied to reduce the strength 
 Config.AntPoisonedLifespan = 500               # total lifetime left for poisoned and (in steps)
 Config.AntSenseRadiusPoisonPheromones = 60     # used instead of AntSenseRadius for sensing poison pheromones
 
-Config.PheromoneDecay = 0.0005
+Config.PheromoneDecay = 0.001
 Config.PheromoneDistanceReduce = 0.1
-Config.PheromoneMapTileSize = 5
+Config.PheromoneMapTileSize = 3

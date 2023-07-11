@@ -7,6 +7,7 @@ from FoodCluster import FoodCluster
 from Pheromone import Pheromone
 from CollisionPygame import CollisionPygame
 from PheromoneMap import PheromoneMap
+from PheromoneMapNumpy import PheromoneMapNumpy
 from Map import Map
 import Config
 import ThreadHelper
@@ -18,8 +19,10 @@ class World:
         self.nests = []
         self.ants = []
         self.foodclusters = []
-        self.pheromones = []
-        self.pheromoneMap = PheromoneMap(self)
+        if Config.UseNumpy:
+            self.pheromoneMap = PheromoneMapNumpy(self)
+        else:
+            self.pheromoneMap = PheromoneMap(self)
         self.collision = CollisionPygame()
         self.map = None
 
@@ -38,10 +41,8 @@ class World:
             self.foodclusters.append(object)
             self.render_engine.add(object)
         elif type(object) is Pheromone:
-            if self.pheromoneMap.add(object) == True:
-                object.setWorld(self)
-                self.pheromones.append(object)
-                self.render_engine.add(object)
+            object.setWorld(self)
+            self.pheromoneMap.add(object)
         elif type(object) is Map:
             self.map = object
             self.render_engine.add(object)
@@ -49,8 +50,6 @@ class World:
     def remove(self, object):
         if type(object) is Pheromone:
             self.pheromoneMap.remove(object)
-            self.pheromones.remove(object)
-            self.render_engine.remove(object)
         if type(object) is Ant:
             self.ants.remove(object)
             object.sprite.kill()
@@ -69,7 +68,8 @@ class World:
 
         self.checkFoodClusterCollision()
         self.checkNestCollision()
-        for pheromone in self.pheromones: pheromone.decay(Config.PheromoneDecay)
+        self.pheromoneMap.decay()
+
 
     def stop(self):
         for nest in self.nests:
@@ -95,8 +95,7 @@ class World:
 
     def pheromoneLoop(self, running):
         while running[0]:
-            for pheromone in self.pheromones:
-                pheromone.decay(Config.PheromoneDecay)
+            self.pheromoneMap.decay()
             time.sleep(Config.AntSleepTime)
 
     def checkFoodClusterCollision(self):

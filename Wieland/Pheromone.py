@@ -33,6 +33,5 @@ class Pheromone:
     def remove(self):
         self.world.remove(self)
 
-
     def update(self):
         if self.sprite != None: self.sprite.update()

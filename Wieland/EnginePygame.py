@@ -27,7 +27,6 @@ class EnginePygame:
         self.pgants = pygame.sprite.Group()
         self.pgnests = pygame.sprite.Group()
         self.pgfoodclusters = pygame.sprite.Group()
-        self.pgpheromones = []
         self.pheromone_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
         self.pheromone_update_step = 0
         self.pgmap = None
@@ -53,15 +52,8 @@ class EnginePygame:
         if type(object) is FoodCluster:
             pgfoodcluster = PGFoodCluster(object)
             self.pgfoodclusters.add(pgfoodcluster)
-        if type(object) is Pheromone:
-            pgpheromone = PGPheromone(object)
-            self.pgpheromones.append(pgpheromone)
         if type(object) is Map:
             self.pgmap = PGMap(object)
-    
-    def remove(self, object):
-        if type(object) is Pheromone:
-            self.pgpheromones.remove(object.sprite)
 
     def handleUserInteraction(self):
         LEFT = 1
@@ -104,21 +96,27 @@ class EnginePygame:
                         if math.sqrt((foodcluster.position[0] - mouse_pos[0]) ** 2
                                      + (foodcluster.position[1] - mouse_pos[1]) ** 2) <= foodcluster.size():
                             foodcluster.poison()
-                
-
 
     def drawPheromones(self):
         self.pheromone_update_step += 1
-        if self.pheromone_update_step % 1 == 0:
-            maxIntensity = 1
+        if self.pheromone_update_step % 1 != 0:
+            self.screen.blit(self.pheromone_surface, (0,0))
+            return
+        
+        if Config.UseNumpy: 
+            self.world.pheromoneMap.updatePixelArray(pygame.surfarray.pixels2d(self.pheromone_surface))
+        else:
+            avgIntensity = 0
             self.pheromone_surface.fill((0,0,0,0))
-            for pgpheromone in self.pgpheromones:
-                if pgpheromone.pheromone.intensity > maxIntensity:
-                    maxIntensity = pgpheromone.pheromone.intensity
-                pgpheromone.draw(self.pheromone_surface)
+            for p in self.world.pheromoneMap.pheromones:
+                # if p.intensity > maxIntensity: maxIntensity = p.intensity
+                avgIntensity += p.intensity
+                color = p.type
+                size = Config.PheromoneSize * (1+ p.intensity / Pheromone.maxIntensity)
+                pygame.draw.circle(self.pheromone_surface, Colors.PheromoneColors[color], p.position, size)
 
-            Pheromone.maxIntensity = maxIntensity
-
+            Pheromone.maxIntensity = 1 + avgIntensity / max(1,len(self.world.pheromoneMap.pheromones))
+        
         self.screen.blit(self.pheromone_surface, (0,0))
 
 
@@ -155,6 +153,7 @@ class EnginePygame:
         pygame.quit()
 
     def printNestStats(self):
+        return
         text = "Nest Food: "
         for idx, nest in enumerate(self.world.nests):
             text += "["+ str(idx) + "]: " + str(nest.food_amount) + " "
@@ -273,16 +272,6 @@ class PGFoodCluster(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.foodcluster.position[0] - self.rect.width / 2
         self.rect.y = self.foodcluster.position[1] - self.rect.height / 2
-
-class PGPheromone():
-    def __init__(self, pheromone):
-        self.pheromone = pheromone
-        pheromone.setSprite(self)
-
-    def draw(self, surface):
-        color = self.pheromone.type
-        size = Config.PheromoneSize + Config.PheromoneMapTileSize * self.pheromone.intensity / Pheromone.maxIntensity
-        pygame.draw.circle(surface, Colors.PheromoneColors[color], self.pheromone.position, size)
 
 
 class PGMap(pygame.sprite.Sprite):

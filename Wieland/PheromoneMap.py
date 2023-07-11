@@ -7,7 +7,8 @@ class PheromoneMap:
         self.world = world
         self.width = math.ceil(world.width / Config.PheromoneMapTileSize)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSize)
-        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(3)]
+        self.map = [[ [None for row in range(self.width)] for col in range(self.height)] for type in range(len(Type))]
+        self.pheromones = []
 
     def add(self, pheromone):
         x,y = self.getMapCoordinates(pheromone.position)
@@ -16,13 +17,20 @@ class PheromoneMap:
         if self.map[pheromone.type][y][x] == None:
             self.map[pheromone.type][y][x] = pheromone
             pheromone.tile = (x,y)
+            self.pheromones.append(pheromone)
             return True
         self.adjustPheromone(self.map[pheromone.type][y][x], pheromone)
         return False
     
     def remove(self, pheromone):
         x,y = self.getMapCoordinates(pheromone.position)
+        self.pheromones.remove(self.map[pheromone.type][y][x])
         self.map[pheromone.type][y][x] = None
+        
+
+    def decay(self):
+        for p in self.pheromones:
+            p.decay(Config.PheromoneDecay)
 
     def removeAllAt(self, position):
         mx,my = self.getMapCoordinates(position)
@@ -31,7 +39,7 @@ class PheromoneMap:
             for x in range(mx-size,mx+size):
                 if x >= self.width or y >= self.height: continue
                 if x < 0 or y < 0: continue
-                for type in range(3):
+                for type in range(len(Type)):
                     if self.map[type][y][x] == None: continue
                     self.map[type][y][x].remove()
                     self.map[type][y][x] = None

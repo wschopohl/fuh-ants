@@ -34,4 +34,9 @@ PheromoneDistanceReduce = 0.1
 PheromoneMapTileSize = 15
 PheromoneEraserSize = 20
 
-UseThreading = True
+UseThreading = False
+
+UseNumpy = True
+PheromoneMapTileSizeNumpy = 3
+AntSenseRadiusNumpy = 30
+AntFieldOfViewNumpy = 70
