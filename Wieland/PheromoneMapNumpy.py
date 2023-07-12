@@ -10,11 +10,11 @@ class PheromoneMapNumpy:
         
         self.width = math.ceil(world.width / Config.PheromoneMapTileSizeNumpy)
         self.height = math.ceil(world.height / Config.PheromoneMapTileSizeNumpy)       
-        
+        self.draw_map =  np.zeros((self.world.width, self.world.height,len(Type)))
         self.phero_map = np.zeros((self.width, self.height,len(Type)))
         self.sense_radius = math.floor(Config.AntSenseRadiusNumpy / Config.PheromoneMapTileSizeNumpy)
         self.sens_weight = np.zeros((2*self.sense_radius+1,2*self.sense_radius+1,2))
-
+        
         self.maxIntensity = [1 for i in range(len(Type))]
 
         for x in range(self.sens_weight.shape[0]):
@@ -23,21 +23,27 @@ class PheromoneMapNumpy:
                     self.sens_weight[x,y,0] = 1
                     self.sens_weight[x,y,1] = 0
                 else:
-                    self.sens_weight[x,y,0] = 1#1/((Config.AntSenseRadiusNumpy-x)**2+(y-Config.AntSenseRadiusNumpy)**2)**0.5
+                    self.sens_weight[x,y,0] = max(0,self.sense_radius-((self.sense_radius-x)**2+(y-self.sense_radius)**2)**0.5/self.sense_radius)
                     self.sens_weight[x,y,1] = np.arctan2(-(y-self.sense_radius),(x-self.sense_radius))/np.pi*180
                 
 
     def add(self, pheromone):
         x,y = self.getMapCoordinates(pheromone.position)
         self.phero_map[x,y,pheromone.type] += pheromone.intensity
+        ix = int(pheromone.position[0])
+        iy = int(pheromone.position[1])
+        self.draw_map[ix-1:ix+1,iy-1:iy+1,pheromone.type] += pheromone.intensity
 
     def remove(self, pheromone):
         x,y = self.getMapCoordinates(pheromone.position)
         self.phero_map[x,y,pheromone.type] = 0
+        self.draw_map[int(pheromone.position[0]),int(pheromone.position[1]),pheromone.type] = 0
         
     def decay(self):
         self.phero_map -= Config.PheromoneDecay
         self.phero_map = self.phero_map.clip(min=0)
+        self.draw_map -= Config.PheromoneDecay
+        self.draw_map = self.draw_map.clip(min=0)
 
     def removeAllAt(self, position):
         mx,my = self.getMapCoordinates(position)
@@ -66,7 +72,7 @@ class PheromoneMapNumpy:
         my2 = self.sense_radius+my-y
         py2 = self.sense_radius+py-y
 
-        # s1 = np.array(self.sens_weight[mx2:px2,my2:py2,0])
+        s1 = np.array(self.sens_weight[mx2:px2,my2:py2,0])
         # sensor 1
         s2 = np.array(self.sens_weight[mx2:px2,my2:py2,1])
         s2[:,:] = (s2[:,:]-old_angle)%360
@@ -77,7 +83,7 @@ class PheromoneMapNumpy:
         s2[:,:] = (Config.AntFieldOfViewNumpy-abs(s2[:,:]))/Config.AntFieldOfViewNumpy
         
         #center of mass
-        weights = nearby[:,:]*s2[:,:]
+        weights = nearby[:,:]*s1[:,:]*s2[:,:]
         if len(np.where(weights!=0)[0])== 0:
             return None
         total_weight = np.sum(weights[:,:])
@@ -89,8 +95,9 @@ class PheromoneMapNumpy:
         return np.arctan2(-y,x)/np.pi*180
 
 
-    def updatePixelArray(self, pixel_array):
-        return
+    def updatePixelArray(self):
+        
+        return self.draw_map*50
         for y in range(self.height):
             for x in range(self.width):
                 for type in range(len(Type)):

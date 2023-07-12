@@ -38,5 +38,5 @@ UseThreading = False
 
 UseNumpy = True
 PheromoneMapTileSizeNumpy = 3
-AntSenseRadiusNumpy = 30
+AntSenseRadiusNumpy = 100
 AntFieldOfViewNumpy = 70

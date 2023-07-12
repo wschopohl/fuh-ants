@@ -28,6 +28,10 @@ class EnginePygame:
         self.pgnests = pygame.sprite.Group()
         self.pgfoodclusters = pygame.sprite.Group()
         self.pheromone_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.surf_phero_a = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.surf_phero_a.fill([0,255,0,0])
+        self.surf_phero_b = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
+        self.surf_phero_b.fill([255,0,255,0])
         self.pheromone_update_step = 0
         self.pgmap = None
         self.debug_surface = pygame.Surface((world.width, world.height), pygame.SRCALPHA)
@@ -104,7 +108,20 @@ class EnginePygame:
             return
         
         if Config.UseNumpy: 
-            self.world.pheromoneMap.updatePixelArray(pygame.surfarray.pixels2d(self.pheromone_surface))
+            draw_map = self.world.pheromoneMap.updatePixelArray()
+            if self.pheromone_update_step % 10 == 0:
+                surf_phero_a_alpha = pygame.surfarray.pixels_alpha(self.surf_phero_a)
+                surf_phero_a_alpha[:] = draw_map[:,:,0]#.astype('uint8')
+                del surf_phero_a_alpha
+
+                surf_phero_b_alpha = pygame.surfarray.pixels_alpha(self.surf_phero_b)
+                surf_phero_b_alpha[:] = draw_map[:,:,1]#.astype('uint8')
+                del surf_phero_b_alpha
+
+            self.screen.blit(self.surf_phero_a,(0,0))
+            self.screen.blit(self.surf_phero_b,(0,0))
+
+
         else:
             avgIntensity = 0
             self.pheromone_surface.fill((0,0,0,0))
@@ -117,7 +134,7 @@ class EnginePygame:
 
             Pheromone.maxIntensity = 1 + avgIntensity / max(1,len(self.world.pheromoneMap.pheromones))
         
-        self.screen.blit(self.pheromone_surface, (0,0))
+            self.screen.blit(self.pheromone_surface, (0,0))
 
 
     def startRenderLoop(self):
