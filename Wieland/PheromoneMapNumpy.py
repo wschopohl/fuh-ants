@@ -19,12 +19,12 @@ class PheromoneMapNumpy:
 
         for x in range(self.sens_weight.shape[0]):
             for y in range(self.sens_weight.shape[1]):
-                if x==y==Config.AntSenseRadiusNumpy:
+                if x==y==self.sense_radius:
                     self.sens_weight[x,y,0] = 1
                     self.sens_weight[x,y,1] = 0
                 else:
                     self.sens_weight[x,y,0] = 1#1/((Config.AntSenseRadiusNumpy-x)**2+(y-Config.AntSenseRadiusNumpy)**2)**0.5
-                    self.sens_weight[x,y,1] = np.arctan2(-(y-Config.AntSenseRadiusNumpy),(x-Config.AntSenseRadiusNumpy))/np.pi*180
+                    self.sens_weight[x,y,1] = np.arctan2(-(y-self.sense_radius),(x-self.sense_radius))/np.pi*180
                 
 
     def add(self, pheromone):
