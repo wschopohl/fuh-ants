@@ -1,8 +1,26 @@
 # Ant Colony Simulation
 modeled as Multi Agent System (MAS)
 
-[Expose](https://github.com/wschopohl/fuh-ants/blob/master/documents/expose/Expose.md)
+## English
+This project was created as part of an university assignment. The documentation is in German, the source code is written in python using pygame.
 
-[Optimizations](https://github.com/wschopohl/fuh-ants/blob/master/documents/optimizations/Optimizations.md)
+There is also a C implementation, that has a massive speed gain: [fuh-ants-c](https://github.com/wschopohl/fuh-ants-c)
 
-[Fragen](https://github.com/wschopohl/fuh-ants/blob/master/documents/questions/Questions.md)
+## Einführung
+Diese Simulation ist im Rahmen eines Fachpraktikums an der Fernuni Hagen entstanden. Im Ordner documents findet sich eine Ausarbeitung, die im Detail auf verschiedene Aspekte der Simulation eingeht.
+
+Die Simulation ist in python geschrieben und verwendet pygame als Engine.
+
+Es gibt auch eine Implementierung in C, die um ein Vielfaches schneller läuft: [fuh-ants-c](https://github.com/wschopohl/fuh-ants-c)
+
+## Benötigte Module:
+```
+pip install pygame
+```
+
+Ausführen der Version (unix code).
+
+```
+cd simulation
+python MainAntSimulation.py
+```
