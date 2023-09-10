@@ -1,6 +1,9 @@
 # Ant Colony Simulation
 modeled as Multi Agent System (MAS)
 
+## Preview
+[![Ant Simulation](https://img.youtube.com/vi/WGKM6V_6-PY/default.jpg)](https://youtu.be/WGKM6V_6-PY)
+
 ## English
 This project was created as part of an university assignment. The documentation is in German, the source code is written in python using pygame.
 
